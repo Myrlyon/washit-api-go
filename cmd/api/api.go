@@ -11,19 +11,22 @@ import (
 	userRoutes "washit-api/app/user/routes"
 	"washit-api/configs"
 	dbs "washit-api/db"
+	"washit-api/redis"
 	"washit-api/utils"
 )
 
 type Server struct {
 	addr   string
 	db     dbs.DatabaseInterface
+	cache  redis.RedisInterface
 	engine *gin.Engine
 }
 
-func NewServer(db dbs.DatabaseInterface) *Server {
+func NewServer(db dbs.DatabaseInterface, cache redis.RedisInterface) *Server {
 	return &Server{
 		addr:   configs.Envs.Port,
 		db:     db,
+		cache:  cache,
 		engine: gin.Default(),
 	}
 }
@@ -53,10 +56,8 @@ func (s *Server) Run() error {
 
 func (s Server) MapRoutes() error {
 	v1 := s.engine.Group("/api/v1")
-	userRoutes.Main(v1, s.db)
-	orderRoutes.Main(v1, s.db)
-	// productHttp.Routes(v1, s.db, s.validator, s.cache)
-	// orderHttp.Routes(v1, s.db, s.validator)
+	userRoutes.Main(v1, s.db, s.cache)
+	orderRoutes.Main(v1, s.db, s.cache)
 	return nil
 }
 

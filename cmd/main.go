@@ -1,17 +1,15 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/go-redis/redis/v8"
-
-	"washit-api/app/user/model"
+	orderModel "washit-api/app/order/model"
+	userModel "washit-api/app/user/model"
 	"washit-api/cmd/api"
 	"washit-api/configs"
 	dbs "washit-api/db"
+	"washit-api/redis"
 )
 
 func main() {
@@ -28,30 +26,19 @@ func main() {
 		log.Fatal("Failed to connect to the database", err)
 	}
 
-	err = db.AutoMigrate(&model.User{})
+	err = db.AutoMigrate(&userModel.User{}, &orderModel.Order{})
 	if err != nil {
 		log.Fatal("Failed to migrate models", err)
 	}
 
-	initRedis(context.Background())
+	cache := redis.New(redis.Config{
+		Address:  fmt.Sprintf("%s:%s", configs.Envs.RedisHost, configs.Envs.RedisPort),
+		Password: configs.Envs.RedisPassword,
+		Database: configs.Envs.RedisDB,
+	})
 
-	server := api.NewServer(db)
+	server := api.NewServer(db, cache)
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func initRedis(ctx context.Context) (rdb *redis.Client, err error) {
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_URL"),
-		Password: "",
-		DB:       0,
-	})
-
-	if _, err := rdb.Ping(ctx).Result(); err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
-	}
-	log.Println("Redis connected successfully.")
-
-	return rdb, nil
 }

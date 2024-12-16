@@ -11,7 +11,7 @@ import (
 
 var Validate = validator.New()
 
-func WriteJson(c *gin.Context, statusCode int, data map[string]interface{}) {
+func WriteJson(c *gin.Context, statusCode int, data interface{}) {
 	c.Header("Content-Type", "application/json")
 	c.Writer.WriteHeader(statusCode)
 	jsonData, err := json.Marshal(data)

@@ -10,21 +10,27 @@ import (
 )
 
 func JWTAuth() gin.HandlerFunc {
-	return JWT(jwt.AccessTokenType)
+	return JWT(jwt.AccessTokenType, "any")
+}
+
+func JTWAuthAdmin() gin.HandlerFunc {
+	return JWT(jwt.AccessTokenType, "admin")
 }
 
 func JWTRefresh() gin.HandlerFunc {
-	return JWT(jwt.RefreshTokenType)
+	return JWT(jwt.RefreshTokenType, "any")
 }
 
-func JWT(tokenType string) gin.HandlerFunc {
+func JWT(tokenType string, role string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "token required"})
 			c.Abort()
 			return
 		}
+
+		log.Println("Token: ", token)
 
 		payload, err := jwt.ValidateToken(token)
 		if err != nil || payload == nil || payload["type"] != tokenType {
@@ -32,8 +38,15 @@ func JWT(tokenType string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		log.Println("Payload: ", payload["id"])
+
+		if role != payload["role"] && role != "any" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
 		c.Set("userId", payload["id"])
+		c.Set("userRole", payload["role"])
 		c.Next()
 	}
 }
