@@ -1,4 +1,4 @@
-package request
+package userRequest
 
 type Register struct {
 	FirstName string `json:"firstName" validate:"required"`

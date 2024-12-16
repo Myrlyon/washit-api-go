@@ -3,22 +3,21 @@ package orderRoutes
 import (
 	"github.com/gin-gonic/gin"
 
+	order "washit-api/app/order/handler"
+	orderRepository "washit-api/app/order/repository"
+	orderService "washit-api/app/order/service"
 	dbs "washit-api/db"
+	"washit-api/middleware"
+	"washit-api/redis"
 )
 
-func Main(r *gin.RouterGroup, db dbs.DatabaseInterface) {
-	// userRepo := repository.NewUserRepository(db)
-	// userSvc := service.NewUserService(userRepo)
-	// userHandler := user.NewUserHandler(userSvc)
+func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, redis redis.RedisInterface) {
+	repository := orderRepository.NewOrderRepository(db)
+	service := orderService.NewOrderService(repository)
+	handler := order.NewOrderHandler(service, redis)
 
 	// authMiddleware := middleware.JWTAuth()
-	// refreshAuthMiddleware := middleware.JWTRefresh()
-	// profileRoute := r.Group("/profile")
+	adminAuthMiddleware := middleware.JTWAuthAdmin()
 
-	// Profile
-	// r.GET("/orders", authMiddleware, userHandler.GetMe)
-	// r.GET("/order", authMiddleware, userHandler.GetMe)
-	// r.POST("/order/new", authMiddleware, userHandler.GetMe)
-	// r.POST("/order/update", authMiddleware, userHandler.GetMe)
-	// r.POST("/order/cancel", authMiddleware, userHandler.GetMe)
+	r.GET("/orders", adminAuthMiddleware, handler.GetOrders)
 }

@@ -4,26 +4,28 @@ import (
 	"github.com/gin-gonic/gin"
 
 	user "washit-api/app/user/handler"
-	"washit-api/app/user/repository"
-	"washit-api/app/user/service"
+	userRepository "washit-api/app/user/repository"
+	userService "washit-api/app/user/service"
 	dbs "washit-api/db"
 	"washit-api/middleware"
+	"washit-api/redis"
 )
 
-func Main(r *gin.RouterGroup, db dbs.DatabaseInterface) {
-	userRepo := repository.NewUserRepository(db)
-	userSvc := service.NewUserService(userRepo)
-	userHandler := user.NewUserHandler(userSvc)
+func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface) {
+	repository := userRepository.NewUserRepository(db)
+	service := userService.NewUserService(repository)
+	handler := user.NewUserHandler(service, cache)
 
 	authMiddleware := middleware.JWTAuth()
-	// refreshAuthMiddleware := middleware.JWTRefresh()
-	authRoute := r.Group("/auth")
-	profileRoute := r.Group("/profile")
+	adminAuthMiddleware := middleware.JTWAuthAdmin()
 
 	// Auth
-	authRoute.POST("/register", userHandler.Register)
-	authRoute.POST("/login", userHandler.Login)
+	r.POST("/auth/register", handler.Register)
+	r.POST("/auth/login", handler.Login)
 
 	// Profile
-	profileRoute.GET("/me", authMiddleware, userHandler.GetMe)
+	r.GET("/profile/me", authMiddleware, handler.GetMe)
+
+	// User
+	r.GET("/users", adminAuthMiddleware, handler.GetUsers)
 }
