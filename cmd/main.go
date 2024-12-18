@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	orderModel "washit-api/app/order/model"
-	userModel "washit-api/app/user/model"
+	orderModel "washit-api/app/order/dto/model"
+	userModel "washit-api/app/user/dto/model"
 	"washit-api/cmd/api"
 	"washit-api/configs"
 	dbs "washit-api/db"
@@ -13,15 +13,7 @@ import (
 )
 
 func main() {
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		configs.Envs.DBUser,
-		configs.Envs.DBPassword,
-		configs.Envs.DBHost,
-		configs.Envs.DBPort,
-		configs.Envs.DBName,
-	)
-
-	db, err := dbs.NewDatabase(dsn)
+	db, err := dbs.NewDatabase(configs.Envs.URI)
 	if err != nil {
 		log.Fatal("Failed to connect to the database", err)
 	}

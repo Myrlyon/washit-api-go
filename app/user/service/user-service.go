@@ -6,16 +6,18 @@ import (
 	"log"
 	"strconv"
 
+	userModel "washit-api/app/user/dto/model"
 	userRequest "washit-api/app/user/dto/request"
-	userModel "washit-api/app/user/model"
 	userRepository "washit-api/app/user/repository"
 	jwt "washit-api/token"
 	"washit-api/utils"
 )
 
 type UserServiceInterface interface {
+	RefreshToken(ctx context.Context, userId string) (string, error)
 	Register(ctx context.Context, req *userRequest.Register) (*userModel.User, error)
-	Login(ctx context.Context, req *userRequest.Login) (*userModel.User, any, error)
+	Login(ctx context.Context, req *userRequest.Login) (*userModel.User, any, any, error)
+	Logout(ctx context.Context, userId string) error
 	GetUserByID(ctx context.Context, id string) (*userModel.User, error)
 	GetUsers(ctx context.Context) ([]*userModel.User, error)
 }
@@ -31,20 +33,34 @@ func NewUserService(
 	}
 }
 
-func (s *UserService) Login(ctx context.Context, req *userRequest.Login) (*userModel.User, any, error) {
+func (s *UserService) RefreshToken(ctx context.Context, userId string) (string, error) {
+	user, err := s.repository.GetUserByID(ctx, userId)
+	if err != nil {
+		log.Println("Failed to get user by id ", err)
+		return "", err
+	}
+
+	tokenData := map[string]interface{}{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
+
+	accessToken := jwt.GenerateAccessToken(tokenData)
+	return accessToken, nil
+}
+
+func (s *UserService) Login(ctx context.Context, req *userRequest.Login) (*userModel.User, any, any, error) {
 	user, err := s.repository.GetUserByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, nil, errors.New("invalid email or password")
+		return nil, nil, nil, errors.New("invalid email or password")
 	}
 
 	if !utils.ComparePasswords(user.Password, []byte(req.Password)) {
-		return nil, nil, errors.New("invalid email or password")
+		return nil, nil, nil, errors.New("invalid email or password")
 	}
 
-	tokenData := map[string]interface{}{"id": strconv.Itoa(user.ID), "role": user.Role}
+	tokenData := map[string]interface{}{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
 
 	accessToken := jwt.GenerateAccessToken(tokenData)
-	return user, accessToken, nil
+	refreshToken := jwt.GenerateRefreshToken(tokenData)
+	return user, accessToken, refreshToken, nil
 }
 
 func (s *UserService) Register(ctx context.Context, req *userRequest.Register) (*userModel.User, error) {
@@ -59,11 +75,25 @@ func (s *UserService) Register(ctx context.Context, req *userRequest.Register) (
 		return nil, err
 	}
 
+	sId, err := utils.SnowflakeId(1)
+	if err != nil {
+		log.Println("Failed to generate snowflake id ", err)
+		return nil, err
+	}
+
+	imagePath, err := utils.MakeProfileImage(req.FirstName, req.LastName)
+	if err != nil {
+		log.Println("Failed to create profile image ", err)
+		return nil, err
+	}
+
 	user := &userModel.User{
+		ID:        sId,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,
 		Password:  hashedPassword,
+		Image:     imagePath,
 	}
 
 	if err := s.repository.CreateUser(ctx, user); err != nil {
@@ -72,6 +102,10 @@ func (s *UserService) Register(ctx context.Context, req *userRequest.Register) (
 	}
 
 	return user, nil
+}
+
+func (s *UserService) Logout(ctx context.Context, userId string) error {
+	return nil
 }
 
 func (s *UserService) GetUsers(ctx context.Context) ([]*userModel.User, error) {

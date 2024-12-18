@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 	userService "washit-api/app/user/service"
 	"washit-api/configs"
 	"washit-api/redis"
+	jwt "washit-api/token"
 	"washit-api/utils"
 )
 
@@ -24,6 +26,23 @@ func NewUserHandler(service userService.UserServiceInterface, cache redis.RedisI
 		service: service,
 		cache:   cache,
 	}
+}
+
+func (h *UserHandler) RefreshToken(ctx *gin.Context) {
+	userID := ctx.GetString("userId")
+	if userID == "" {
+		utils.WriteError(ctx, http.StatusUnauthorized, errors.New("unauthorized"))
+		return
+	}
+
+	accessToken, err := h.service.RefreshToken(ctx, userID)
+	if err != nil {
+		log.Println("Failed to refresh token ", err)
+		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"accessToken": accessToken})
 }
 
 func (h *UserHandler) Login(ctx *gin.Context) {
@@ -40,15 +59,24 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	user, accessToken, err := h.service.Login(ctx, &req)
+	user, accessToken, refreshToken, err := h.service.Login(ctx, &req)
 	if err != nil {
 		log.Println("Failed to login as user ", err)
 		utils.WriteError(ctx, http.StatusInternalServerError, err)
 		return
 	}
 
+	tokenString, ok := accessToken.(string)
+	if !ok {
+		log.Println("Failed to assert accessToken as string")
+		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.SetCookie("jwt", tokenString, jwt.AccessTokenExpiredTime, "/", "localhost", false, true)
+
 	utils.CopyTo(user, &res)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"user": res, "accessToken": accessToken})
+	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"user": res, "accessToken": tokenString, "refreshToken": refreshToken})
 }
 
 func (h *UserHandler) Register(ctx *gin.Context) {
@@ -76,10 +104,16 @@ func (h *UserHandler) Register(ctx *gin.Context) {
 	utils.WriteJson(ctx, http.StatusCreated, map[string]interface{}{"user": res})
 }
 
+func (h *UserHandler) Logout(ctx *gin.Context) {
+	ctx.SetCookie("jwt", "", -1, "/", "localhost", false, true)
+	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"message": "Successfully logged out"})
+}
+
 func (h *UserHandler) GetMe(ctx *gin.Context) {
 	var res userResource.User
 
 	cacheKey := ctx.Request.URL.RequestURI()
+	log.Println("cacheKey", cacheKey)
 	err := h.cache.Get(cacheKey, &res)
 	if err == nil {
 		utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"user": res})
