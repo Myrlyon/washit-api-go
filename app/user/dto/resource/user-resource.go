@@ -11,4 +11,5 @@ type User struct {
 	Email     string    `json:"email"`
 	Role      string    `json:"role"`
 	CreatedAt time.Time `json:"createdAt"`
+	Image     string    `json:"image"`
 }

@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -15,6 +16,7 @@ const (
 )
 
 type Config struct {
+	URI           string
 	Port          string
 	DBUser        string
 	DBPassword    string
@@ -33,6 +35,13 @@ var Envs = initConfig()
 func initConfig() Config {
 	godotenv.Load()
 	return Config{
+		URI: fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			getEnv("DB_USER", "postgres"),
+			getEnv("DB_PASSWORD", "mypassword"),
+			getEnv("DB_HOST", "127.0.0.1"),
+			getEnv("DB_PORT", "5432"),
+			getEnv("DB_NAME", "db_washit"),
+		),
 		Port:          getEnv("PORT", "8080"),
 		DBUser:        getEnv("DB_USER", "postgres"),
 		DBPassword:    getEnv("DB_PASSWORD", "mypassword"),

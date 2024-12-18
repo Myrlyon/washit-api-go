@@ -1,13 +1,12 @@
-package orderModel
+package historyModel
 
 import (
 	"time"
-
-	userModel "washit-api/app/user/model"
+	userModel "washit-api/app/user/dto/model"
 )
 
-type Order struct {
-	ID            int            `json:"id" gorm:"primaryKey"`
+type History struct {
+	ID            string         `json:"id" gorm:"primaryKey unique"`
 	UserID        int            `json:"userId" gorm:"not null;index"`
 	TransactionID int            `json:"transactionId"`
 	AddressID     int            `json:"addressId"`
@@ -18,8 +17,6 @@ type Order struct {
 	Price         float64        `json:"price"`
 	CollectDate   time.Time      `json:"collectDate"`
 	EstimateDate  time.Time      `json:"estimateDate"`
-	CreatedAt     time.Time      `json:"createdAt"`
-	UpdatedAt     time.Time      `json:"updatedAt"`
 	DeletedAt     time.Time      `json:"deletedAt"`
 	User          userModel.User `json:"user" gorm:"foreignKey:UserID;references:ID"`
 }

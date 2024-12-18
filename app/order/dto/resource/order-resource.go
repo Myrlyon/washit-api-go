@@ -1,9 +1,11 @@
 package orderResource
 
-import "time"
+import (
+	"time"
+)
 
 type Order struct {
-	ID            int       `json:"id" gorm:"primaryKey"`
+	ID            string    `json:"id" gorm:"primaryKey"`
 	UserID        int       `json:"userId" gorm:"not null;index"`
 	TransactionID int       `json:"transactionId"`
 	AddressID     int       `json:"addressId"`
@@ -16,5 +18,4 @@ type Order struct {
 	EstimateDate  time.Time `json:"estimateDate"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
-	DeletedAt     time.Time `json:"deletedAt"`
 }

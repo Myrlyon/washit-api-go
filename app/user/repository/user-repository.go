@@ -3,7 +3,7 @@ package userRepository
 import (
 	"context"
 
-	userModel "washit-api/app/user/model"
+	userModel "washit-api/app/user/dto/model"
 	dbs "washit-api/db"
 )
 

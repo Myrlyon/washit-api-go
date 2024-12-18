@@ -56,6 +56,7 @@ func (s *Server) Run() error {
 
 func (s Server) MapRoutes() error {
 	v1 := s.engine.Group("/api/v1")
+	s.engine.Static("/public", "./public")
 	userRoutes.Main(v1, s.db, s.cache)
 	orderRoutes.Main(v1, s.db, s.cache)
 	return nil

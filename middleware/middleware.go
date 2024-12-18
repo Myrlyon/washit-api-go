@@ -33,6 +33,10 @@ func JWT(tokenType string, role string) gin.HandlerFunc {
 		log.Println("Token: ", token)
 
 		payload, err := jwt.ValidateToken(token)
+		log.Println("err")
+		log.Println(err)
+		log.Println("payload")
+		log.Println(payload["type"])
 		if err != nil || payload == nil || payload["type"] != tokenType {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			c.Abort()
@@ -40,7 +44,7 @@ func JWT(tokenType string, role string) gin.HandlerFunc {
 		}
 
 		if role != payload["role"] && role != "any" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "role unauthorized"})
 			c.Abort()
 			return
 		}
