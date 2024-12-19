@@ -18,8 +18,10 @@ type UserServiceInterface interface {
 	Register(ctx context.Context, req *userRequest.Register) (*userModel.User, error)
 	Login(ctx context.Context, req *userRequest.Login) (*userModel.User, any, any, error)
 	Logout(ctx context.Context, userId string) error
-	GetUserByID(ctx context.Context, id string) (*userModel.User, error)
+	GetMe(ctx context.Context, userId string) (*userModel.User, error)
+	GetUserByID(ctx context.Context, userId string) (*userModel.User, error)
 	GetUsers(ctx context.Context) ([]*userModel.User, error)
+	UpdateMe(ctx context.Context, userId string, req *userRequest.Update) (*userModel.User, error)
 }
 
 type UserService struct {
@@ -108,6 +110,48 @@ func (s *UserService) Logout(ctx context.Context, userId string) error {
 	return nil
 }
 
+func (s *UserService) UpdateMe(ctx context.Context, userId string, req *userRequest.Update) (*userModel.User, error) {
+	user, err := s.repository.GetUserByID(ctx, userId)
+	if err != nil {
+		log.Println("Failed to get user by id ", err)
+		return nil, err
+	}
+
+	if req.FirstName != "" {
+		user.FirstName = req.FirstName
+	}
+	if req.LastName != "" {
+		user.LastName = req.LastName
+	}
+	if req.Email != "" {
+		user.Email = req.Email
+	}
+	if req.Password != "" {
+		user.Password, err = utils.HashPassword(req.Password)
+		if err != nil {
+			log.Println("Password failed to be encrypted: ", err)
+			return nil, err
+		}
+	}
+
+	if err := s.repository.UpdateUser(ctx, user); err != nil {
+		log.Println("Failed to update user ", err)
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (s *UserService) GetMe(ctx context.Context, userId string) (*userModel.User, error) {
+	user, err := s.repository.GetUserByID(ctx, userId)
+	if err != nil {
+		log.Println("Failed to get profile information", err)
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (s *UserService) GetUsers(ctx context.Context) ([]*userModel.User, error) {
 	user, err := s.repository.GetUsers(ctx)
 	if err != nil {
@@ -118,8 +162,8 @@ func (s *UserService) GetUsers(ctx context.Context) ([]*userModel.User, error) {
 	return user, nil
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id string) (*userModel.User, error) {
-	user, err := s.repository.GetUserByID(ctx, id)
+func (s *UserService) GetUserByID(ctx context.Context, userId string) (*userModel.User, error) {
+	user, err := s.repository.GetUserByID(ctx, userId)
 	if err != nil {
 		log.Println("Failed to get user by id ", err)
 		return nil, err

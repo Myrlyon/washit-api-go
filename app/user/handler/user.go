@@ -61,7 +61,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
+	if err := utils.Validate.Struct(&req); err != nil {
 		utils.WriteError(ctx, http.StatusBadRequest, err)
 		return
 	}
@@ -82,10 +82,10 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 
 	ctx.SetCookie("jwt", tokenString, jwt.AccessTokenExpiredTime, "/", "localhost", false, true)
 
-	utils.CopyTo(user, &res.User)
-	utils.CopyTo(accessToken, &res.AccessToken)
-	utils.CopyTo(refreshToken, &res.RefreshToken)
-	utils.WriteJson(ctx, http.StatusOK, res)
+	utils.CopyTo(&user, &res.User)
+	utils.CopyTo(&accessToken, &res.AccessToken)
+	utils.CopyTo(&refreshToken, &res.RefreshToken)
+	utils.WriteJson(ctx, http.StatusOK, &res)
 }
 
 // @Summary	Register a new user
@@ -104,7 +104,7 @@ func (h *UserHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
+	if err := utils.Validate.Struct(&req); err != nil {
 		utils.WriteError(ctx, http.StatusBadRequest, err)
 		return
 	}
@@ -116,13 +116,47 @@ func (h *UserHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	utils.CopyTo(user, &res.User)
-	utils.WriteJson(ctx, http.StatusCreated, res)
+	utils.CopyTo(&user, &res.User)
+	utils.WriteJson(ctx, http.StatusCreated, &res)
 }
 
 func (h *UserHandler) Logout(ctx *gin.Context) {
 	ctx.SetCookie("jwt", "", -1, "/", "localhost", false, true)
 	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"message": "Successfully logged out"})
+}
+
+// @Summary	Update the current logged-in user
+// @Tags		User
+// @Accept		json
+// @Produce	json
+// @Param		_	body		userRequest.Update	true	"Body"
+// @Success	201	{object}	userResource.HideToken
+// @Router		/profile/update [post]
+func (h *UserHandler) UpdateMe(ctx *gin.Context) {
+	var req userRequest.Update
+	var res userResource.HideToken
+
+	if err := utils.ParseJson(ctx, &req); err != nil {
+		utils.WriteError(ctx, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := utils.Validate.Struct(&req); err != nil {
+		utils.WriteError(ctx, http.StatusBadRequest, err)
+		return
+	}
+
+	userID := ctx.GetString("userId")
+
+	user, err := h.service.UpdateMe(ctx, userID, &req)
+	if err != nil {
+		log.Println("Failed to update user ", err)
+		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.CopyTo(&user, &res.User)
+	utils.WriteJson(ctx, http.StatusOK, &res)
 }
 
 // @Summary	Get the current logged-in user
@@ -136,16 +170,14 @@ func (h *UserHandler) GetMe(ctx *gin.Context) {
 	var res userResource.HideToken
 
 	cacheKey := ctx.Request.URL.RequestURI()
-	log.Println("cacheKey", cacheKey)
 	err := h.cache.Get(cacheKey, &res)
 	if err == nil {
-		utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"user": res})
+		utils.WriteJson(ctx, http.StatusOK, &res)
 		return
 	}
 
 	userID := ctx.GetString("userId")
-
-	user, err := h.service.GetUserByID(ctx, userID)
+	user, err := h.service.GetMe(ctx, userID)
 	if err != nil {
 		log.Println("Failed to get user ", err)
 		utils.WriteError(ctx, http.StatusInternalServerError, err)
@@ -153,19 +185,19 @@ func (h *UserHandler) GetMe(ctx *gin.Context) {
 	}
 
 	utils.CopyTo(&user, &res.User)
-	utils.WriteJson(ctx, http.StatusOK, res)
-	_ = h.cache.SetWithExpiration(cacheKey, res, configs.ProductCachingTime)
+	utils.WriteJson(ctx, http.StatusOK, &res)
+	_ = h.cache.SetWithExpiration(cacheKey, &res, configs.ProductCachingTime)
 }
 
-// @Summary	Get the current logged-in user
+// @Summary	Get all users
 // @Tags		User
 // @Accept		json
 // @Produce	json
 // @Security	ApiKeyAuth
-// @Success	200	{object}	userResource.User
+// @Success	200	{object}	userResource.Base
 // @Router		/users [get]
 func (h *UserHandler) GetUsers(ctx *gin.Context) {
-	var res []userResource.User
+	var res []userResource.Base
 
 	users, err := h.service.GetUsers(ctx)
 	if err != nil {
@@ -176,4 +208,25 @@ func (h *UserHandler) GetUsers(ctx *gin.Context) {
 
 	utils.CopyTo(&users, &res)
 	utils.WriteJson(ctx, http.StatusOK, utils.ToData("users", &res))
+}
+
+// @Summary	Get a user by ID
+// @Tags		User
+// @Accept		json
+// @Produce	json
+// @Security	ApiKeyAuth
+// @Success	200	{object}	userResource.Base
+// @Router		/user/:id [get]
+func (h *UserHandler) GetUserById(ctx *gin.Context) {
+	var res userResource.Base
+
+	user, err := h.service.GetUserByID(ctx, ctx.Param("id"))
+	if err != nil {
+		log.Println("Failed to get user ", err)
+		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.CopyTo(&user, &res)
+	utils.WriteJson(ctx, http.StatusOK, utils.ToData("user", &res))
 }

@@ -4,26 +4,26 @@ import (
 	"time"
 )
 
-type User struct {
+type Base struct {
 	ID        int       `json:"id"`
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Email     string    `json:"email"`
 	Role      string    `json:"role"`
-	CreatedAt time.Time `json:"createdAt"`
 	Image     string    `json:"image"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type ListUser struct {
-	User []User `json:"users"`
+	User []Base `json:"users"`
 }
 
 type HideToken struct {
-	User User `json:"user"`
+	User Base `json:"user"`
 }
 
 type ShowToken struct {
-	User         User   `json:"user"`
+	User         Base   `json:"user"`
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }

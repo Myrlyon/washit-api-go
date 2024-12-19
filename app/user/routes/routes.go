@@ -32,14 +32,14 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterfa
 	r.GET("/profile/me", authMiddleware, handler.GetMe)
 
 	// Profile Put
-	// r.PUT("/profile/update", authMiddleware, handler.UpdateMe)
+	r.PUT("/profile/update", authMiddleware, handler.UpdateMe)
 	// r.PUT("/profile/picture", authMiddleware, handler.UpdatePicture)
 
 	// Admin Authority
 
 	// Users
 	r.GET("/users", adminAuthMiddleware, handler.GetUsers)
-	// r.GET("/user/:id", adminAuthMiddleware, handler.GetUser)
+	r.GET("/user/:id", adminAuthMiddleware, handler.GetUserById)
 	// r.POST)"/user/:id/ban", adminAuthMiddleware, handler.BanUser)
 	// r.POST)"/user/:id/unban", adminAuthMiddleware, handler.UnbanUser)
 	// r.DELETE("/user/:id", adminAuthMiddleware, handler.DeleteUser)

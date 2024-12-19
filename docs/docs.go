@@ -50,7 +50,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/userResource.Login"
+                            "$ref": "#/definitions/userResource.ShowToken"
                         }
                     }
                 }
@@ -83,7 +83,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/userResource.User"
+                            "$ref": "#/definitions/userResource.HideToken"
                         }
                     }
                 }
@@ -110,7 +110,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/userResource.User"
+                            "$ref": "#/definitions/userResource.HideToken"
                         }
                     }
                 }
@@ -132,7 +132,7 @@ const docTemplate = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "Get the current logged-in user",
+                "summary": "Get all users",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -188,7 +188,15 @@ const docTemplate = `{
                 }
             }
         },
-        "userResource.Login": {
+        "userResource.HideToken": {
+            "type": "object",
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/userResource.User"
+                }
+            }
+        },
+        "userResource.ShowToken": {
             "type": "object",
             "properties": {
                 "accessToken": {
