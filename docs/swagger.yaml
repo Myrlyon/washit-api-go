@@ -30,7 +30,12 @@ definitions:
     - lastName
     - password
     type: object
-  userResource.Login:
+  userResource.HideToken:
+    properties:
+      user:
+        $ref: '#/definitions/userResource.User'
+    type: object
+  userResource.ShowToken:
     properties:
       accessToken:
         type: string
@@ -86,7 +91,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.Login'
+            $ref: '#/definitions/userResource.ShowToken'
       summary: Login as a user
       tags:
       - User
@@ -107,7 +112,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/userResource.User'
+            $ref: '#/definitions/userResource.HideToken'
       summary: Register a new user
       tags:
       - User
@@ -121,7 +126,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.User'
+            $ref: '#/definitions/userResource.HideToken'
       security:
       - ApiKeyAuth: []
       summary: Get the current logged-in user
@@ -140,7 +145,7 @@ paths:
             $ref: '#/definitions/userResource.User'
       security:
       - ApiKeyAuth: []
-      summary: Get the current logged-in user
+      summary: Get all users
       tags:
       - User
 securityDefinitions:

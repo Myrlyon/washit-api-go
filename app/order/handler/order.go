@@ -10,6 +10,7 @@ import (
 	orderRequest "washit-api/app/order/dto/request"
 	orderResource "washit-api/app/order/dto/resource"
 	orderService "washit-api/app/order/service"
+	"washit-api/configs"
 	"washit-api/redis"
 	"washit-api/utils"
 )
@@ -35,7 +36,7 @@ func (h *OrderHandler) CreateOrder(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
+	if err := utils.Validate.Struct(&req); err != nil {
 		utils.WriteError(ctx, http.StatusBadRequest, err)
 		return
 	}
@@ -53,12 +54,14 @@ func (h *OrderHandler) CreateOrder(ctx *gin.Context) {
 		return
 	}
 
-	utils.CopyTo(&order, &res)
-	utils.WriteJson(ctx, http.StatusCreated, map[string]interface{}{"order": res})
+	utils.CopyTo(order, &res.Order)
+	res.Message = "Order created successfully"
+	utils.WriteJson(ctx, http.StatusCreated, &res)
 }
 
 func (h *OrderHandler) GetOrderById(ctx *gin.Context) {
-	var res orderResource.Order
+	var selfLink = ctx.Request.URL.RequestURI()
+	var res orderResource.OrderWithLinks
 	var userId string
 
 	if ctx.GetString("userRole") == "admin" {
@@ -74,12 +77,22 @@ func (h *OrderHandler) GetOrderById(ctx *gin.Context) {
 		return
 	}
 
-	utils.CopyTo(&order, &res)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"order": res})
+	res.Hypermedia = utils.CreateLinks(map[string]string{
+		"self": selfLink,
+	})
+	utils.CopyTo(&order, &res.Order)
+	utils.WriteJson(ctx, http.StatusOK, &res)
 }
 
 func (h *OrderHandler) GetOrdersMe(ctx *gin.Context) {
-	var res []orderResource.Order
+	var res []orderResource.Base
+
+	cacheKey := ctx.Request.URL.RequestURI()
+	err := h.cache.Get(cacheKey, &res)
+	if err == nil {
+		utils.WriteJson(ctx, http.StatusOK, utils.ToData("orders", &res))
+		return
+	}
 
 	userId := ctx.GetString("userId")
 	orders, err := h.service.GetOrders(ctx, userId)
@@ -90,11 +103,19 @@ func (h *OrderHandler) GetOrdersMe(ctx *gin.Context) {
 	}
 
 	utils.CopyTo(&orders, &res)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"orders": res})
+	utils.WriteJson(ctx, http.StatusOK, utils.ToData("orders", &res))
+	_ = h.cache.SetWithExpiration(cacheKey, &res, configs.ProductCachingTime)
 }
 
 func (h *OrderHandler) GetOrdersAll(ctx *gin.Context) {
-	var res []orderResource.Order
+	var res []orderResource.Base
+
+	cacheKey := ctx.Request.URL.RequestURI()
+	err := h.cache.Get(cacheKey, &res)
+	if err == nil {
+		utils.WriteJson(ctx, http.StatusOK, utils.ToData("orders", &res))
+		return
+	}
 
 	orders, err := h.service.GetOrders(ctx, "0")
 	if err != nil {
@@ -104,11 +125,12 @@ func (h *OrderHandler) GetOrdersAll(ctx *gin.Context) {
 	}
 
 	utils.CopyTo(&orders, &res)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"orders": res})
+	utils.WriteJson(ctx, http.StatusOK, utils.ToData("orders", &res))
+	_ = h.cache.SetWithExpiration(cacheKey, &res, configs.ProductCachingTime)
 }
 
 func (h *OrderHandler) GetOrdersUser(ctx *gin.Context) {
-	var res []orderResource.Order
+	var res []orderResource.Base
 
 	orders, err := h.service.GetOrders(ctx, ctx.Param("id"))
 	if err != nil {
@@ -118,5 +140,5 @@ func (h *OrderHandler) GetOrdersUser(ctx *gin.Context) {
 	}
 
 	utils.CopyTo(&orders, &res)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"orders": res})
+	utils.WriteJson(ctx, http.StatusOK, utils.ToData("orders", &res))
 }
