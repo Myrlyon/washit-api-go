@@ -6,11 +6,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	orderRoutes "washit-api/app/order/routes"
 	userRoutes "washit-api/app/user/routes"
 	"washit-api/configs"
 	dbs "washit-api/db"
+	_ "washit-api/docs"
 	"washit-api/redis"
 	"washit-api/utils"
 )
@@ -41,9 +44,9 @@ func (s *Server) Run() error {
 		log.Fatalf("Mapping routes: %v", err)
 	}
 
-	// s.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	s.engine.GET("/health", func(c *gin.Context) {
-		utils.WriteJson(c, http.StatusOK, gin.H{"message": "OK"})
+	s.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	s.engine.GET("/ping", func(c *gin.Context) {
+		utils.WriteJson(c, http.StatusOK, "pong")
 	})
 
 	log.Println("HTTP server is listening on PORT: ", s.addr)
