@@ -102,3 +102,8 @@ func CopyTo(src interface{}, dest interface{}) {
 	data, _ := json.Marshal(src)
 	_ = json.Unmarshal(data, dest)
 }
+
+func ToData(title string, ConvertedData any) (responseData any) {
+	responseData = map[string]interface{}{title: ConvertedData}
+	return
+}

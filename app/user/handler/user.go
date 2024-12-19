@@ -45,9 +45,16 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"accessToken": accessToken})
 }
 
+// @Summary	Login as a user
+// @Tags		User
+// @Accept		json
+// @Produce	json
+// @Param		_	body		userRequest.Login	true	"Body"
+// @Success	200	{object}	userResource.ShowToken
+// @Router		/auth/login [post]
 func (h *UserHandler) Login(ctx *gin.Context) {
 	var req userRequest.Login
-	var res userResource.User
+	var res userResource.ShowToken
 
 	if err := utils.ParseJson(ctx, &req); err != nil {
 		utils.WriteError(ctx, http.StatusBadRequest, err)
@@ -75,13 +82,22 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 
 	ctx.SetCookie("jwt", tokenString, jwt.AccessTokenExpiredTime, "/", "localhost", false, true)
 
-	utils.CopyTo(user, &res)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"user": res, "accessToken": tokenString, "refreshToken": refreshToken})
+	utils.CopyTo(user, &res.User)
+	utils.CopyTo(accessToken, &res.AccessToken)
+	utils.CopyTo(refreshToken, &res.RefreshToken)
+	utils.WriteJson(ctx, http.StatusOK, res)
 }
 
+// @Summary	Register a new user
+// @Tags		User
+// @Accept		json
+// @Produce	json
+// @Param		_	body		userRequest.Register	true	"Body"
+// @Success	201	{object}	userResource.HideToken
+// @Router		/auth/register [post]
 func (h *UserHandler) Register(ctx *gin.Context) {
 	var req userRequest.Register
-	var res userResource.User
+	var res userResource.HideToken
 
 	if err := utils.ParseJson(ctx, &req); err != nil {
 		utils.WriteError(ctx, http.StatusBadRequest, err)
@@ -100,8 +116,8 @@ func (h *UserHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	utils.CopyTo(user, &res)
-	utils.WriteJson(ctx, http.StatusCreated, map[string]interface{}{"user": res})
+	utils.CopyTo(user, &res.User)
+	utils.WriteJson(ctx, http.StatusCreated, res)
 }
 
 func (h *UserHandler) Logout(ctx *gin.Context) {
@@ -109,8 +125,15 @@ func (h *UserHandler) Logout(ctx *gin.Context) {
 	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"message": "Successfully logged out"})
 }
 
+// @Summary	Get the current logged-in user
+// @Tags		User
+// @Accept		json
+// @Produce	json
+// @Security	ApiKeyAuth
+// @Success	200	{object}	userResource.HideToken
+// @Router		/profile/me [get]
 func (h *UserHandler) GetMe(ctx *gin.Context) {
-	var res userResource.User
+	var res userResource.HideToken
 
 	cacheKey := ctx.Request.URL.RequestURI()
 	log.Println("cacheKey", cacheKey)
@@ -129,11 +152,18 @@ func (h *UserHandler) GetMe(ctx *gin.Context) {
 		return
 	}
 
-	utils.CopyTo(&user, &res)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"user": res})
+	utils.CopyTo(&user, &res.User)
+	utils.WriteJson(ctx, http.StatusOK, res)
 	_ = h.cache.SetWithExpiration(cacheKey, res, configs.ProductCachingTime)
 }
 
+// @Summary	Get the current logged-in user
+// @Tags		User
+// @Accept		json
+// @Produce	json
+// @Security	ApiKeyAuth
+// @Success	200	{object}	userResource.User
+// @Router		/users [get]
 func (h *UserHandler) GetUsers(ctx *gin.Context) {
 	var res []userResource.User
 
@@ -145,5 +175,5 @@ func (h *UserHandler) GetUsers(ctx *gin.Context) {
 	}
 
 	utils.CopyTo(&users, &res)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"data": res})
+	utils.WriteJson(ctx, http.StatusOK, utils.ToData("users", &res))
 }
