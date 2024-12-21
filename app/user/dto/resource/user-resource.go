@@ -14,7 +14,13 @@ type Base struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+type UserList struct {
+	Message string `json:"message,omitempty"`
+	Users   []Base `json:"users"`
+}
+
 type User struct {
+	Message      string `json:"message,omitempty"`
 	User         Base   `json:"user"`
 	AccessToken  string `json:"accessToken,omitempty"`
 	RefreshToken string `json:"refreshToken,omitempty"`

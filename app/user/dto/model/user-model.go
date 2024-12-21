@@ -11,6 +11,7 @@ type User struct {
 	Password  string    `json:"-"`
 	FcmToken  string    `json:"fcmToken"`
 	Image     string    `json:"image"`
+	IsBanned  bool      `json:"isBanned" gorm:"default:false"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

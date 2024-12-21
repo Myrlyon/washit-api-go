@@ -101,6 +101,7 @@ func (h *UserHandler) LoginWithGoogle(c *gin.Context) {
 	utils.CopyTo(&user, &res.User)
 	utils.CopyTo(&accessToken, &res.AccessToken)
 	utils.CopyTo(&refreshToken, &res.RefreshToken)
+	res.Message = "Successfully logged in with Google"
 	utils.WriteJson(c, http.StatusOK, &res)
 }
 
@@ -146,6 +147,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	utils.CopyTo(&user, &res.User)
 	utils.CopyTo(&accessToken, &res.AccessToken)
 	utils.CopyTo(&refreshToken, &res.RefreshToken)
+	res.Message = "Successfully logged in"
 	utils.WriteJson(c, http.StatusOK, &res)
 }
 
@@ -180,12 +182,43 @@ func (h *UserHandler) Register(c *gin.Context) {
 	}
 
 	utils.CopyTo(&user, &res.User)
+	res.Message = "Successfully registered"
 	utils.WriteJson(c, http.StatusCreated, &res)
 }
 
 func (h *UserHandler) Logout(c *gin.Context) {
 	c.SetCookie("jwt", "", -1, "/", "localhost", false, true)
 	utils.WriteJson(c, http.StatusOK, gin.H{"message": "Successfully logged out"})
+}
+
+func (h *UserHandler) BanUser(c *gin.Context) {
+	var res userResource.User
+
+	user, err := h.service.BanUser(c, c.Param("id"))
+	if err != nil {
+		log.Println("Failed to ban user ", err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.CopyTo(&user, &res.User)
+	res.Message = user.FirstName + " is successfully banned"
+	utils.WriteJson(c, http.StatusOK, &res)
+}
+
+func (h *UserHandler) UnbanUser(c *gin.Context) {
+	var res userResource.User
+
+	user, err := h.service.UnbanUser(c, c.Param("id"))
+	if err != nil {
+		log.Println("Failed to unban user ", err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.CopyTo(&user, &res.User)
+	res.Message = user.FirstName + " is successfully unbanned"
+	utils.WriteJson(c, http.StatusOK, &res)
 }
 
 // @Summary	Update the current logged-in user
@@ -224,6 +257,7 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 	_ = h.cache.Remove(cacheKey)
 
 	utils.CopyTo(&user, &res.User)
+	res.Message = "Successfully updated"
 	utils.WriteJson(c, http.StatusOK, &res)
 }
 
@@ -252,7 +286,9 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	}
 
 	utils.CopyTo(&user, &res.User)
+	res.Message = "user are successfully retrieved"
 	utils.WriteJson(c, http.StatusOK, &res)
+
 	_ = h.cache.SetWithExpiration(cacheKey, &res, configs.ProductCachingTime)
 }
 
@@ -261,10 +297,10 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 // @Accept		json
 // @Produce	json
 // @Security	ApiKeyAuth
-// @Success	200	{object}	userResource.Base
+// @Success	200	{object}	userResource.UserList
 // @Router		/users [get]
 func (h *UserHandler) GetUsers(c *gin.Context) {
-	var res []userResource.Base
+	var res userResource.UserList
 
 	users, err := h.service.GetUsers(c)
 	if err != nil {
@@ -273,8 +309,31 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 		return
 	}
 
-	utils.CopyTo(&users, &res)
-	utils.WriteJson(c, http.StatusOK, gin.H{"users": res})
+	utils.CopyTo(&users, &res.Users)
+	res.Message = "Successfully retrieved users"
+	utils.WriteJson(c, http.StatusOK, &res)
+}
+
+// @Summary	Get all banned users
+// @Tags		User
+// @Accept		json
+// @Produce	json
+// @Security	ApiKeyAuth
+// @Success	200	{object}	userResource.UserList
+// @Router		/users/banned [get]
+func (h *UserHandler) GetBannedUsers(c *gin.Context) {
+	var res userResource.UserList
+
+	users, err := h.service.GetBannedUsers(c)
+	if err != nil {
+		log.Println("Failed to get users ", err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.CopyTo(&users, &res.Users)
+	res.Message = "Successfully retrieved banned users"
+	utils.WriteJson(c, http.StatusOK, &res)
 }
 
 // @Summary	Get a user by ID
@@ -286,7 +345,7 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 // @Success	200	{object}	userResource.Base
 // @Router		/user/{id} [get]
 func (h *UserHandler) GetUserById(c *gin.Context) {
-	var res userResource.Base
+	var res userResource.User
 
 	user, err := h.service.GetUserByID(c, c.Param("id"))
 	if err != nil {
@@ -295,6 +354,7 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 		return
 	}
 
-	utils.CopyTo(&user, &res)
-	utils.WriteJson(c, http.StatusOK, gin.H{"user": res})
+	utils.CopyTo(&user, &res.User)
+	res.Message = "Successfully retrieved user"
+	utils.WriteJson(c, http.StatusOK, &res)
 }

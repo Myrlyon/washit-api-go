@@ -45,6 +45,7 @@ func (s *Server) Run() error {
 
 	s.engine.Use(gin.Recovery())
 	s.engine.Use(gin.Logger())
+	s.engine.HandleMethodNotAllowed = true
 
 	if err := s.MapRoutes(); err != nil {
 		log.Fatalf("Mapping routes: %v", err)
@@ -57,7 +58,7 @@ func (s *Server) Run() error {
 
 	log.Println("HTTP server is listening on PORT: ", s.addr)
 	if err := s.engine.Run(fmt.Sprintf(":%s", configs.Envs.Port)); err != nil {
-		log.Fatalf("Running HTTP server: %v", err)
+		log.Fatalf("Error running HTTP server: %v", err)
 	}
 
 	return nil

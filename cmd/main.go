@@ -57,7 +57,6 @@ func main() {
 	}
 
 	validate := validator.New()
-
 	server := api.NewServer(validate, db, cache, app)
 	if err := server.Run(); err != nil {
 		log.Fatal(err)

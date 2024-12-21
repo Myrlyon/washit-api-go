@@ -13,6 +13,7 @@ type UserRepositoryInterface interface {
 	GetUserByEmail(ctx context.Context, email string) (*userModel.User, error)
 	PutFcmToken(ctx context.Context, userId int64, fcmToken string) error
 	GetUsers(ctx context.Context) ([]*userModel.User, error)
+	GetBannedUsers(ctx context.Context) ([]*userModel.User, error)
 	UpdateUser(ctx context.Context, user *userModel.User) error
 }
 
@@ -54,6 +55,16 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*use
 func (r *UserRepository) GetUsers(ctx context.Context) ([]*userModel.User, error) {
 	var users []*userModel.User
 	if err := r.db.Find(ctx, &users, dbs.WithLimit(10), dbs.WithOrder("id")); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r *UserRepository) GetBannedUsers(ctx context.Context) ([]*userModel.User, error) {
+	var users []*userModel.User
+	query := dbs.NewQuery("is_banned = ?", true)
+	if err := r.db.Find(ctx, &users, dbs.WithQuery(query)); err != nil {
 		return nil, err
 	}
 

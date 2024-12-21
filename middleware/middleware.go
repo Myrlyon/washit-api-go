@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,8 +28,6 @@ func JWT(tokenType string, role string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
-		log.Println("Token: ", token)
 
 		payload, err := jwt.ValidateToken(token)
 		if err != nil || payload == nil || payload["type"] != tokenType {
