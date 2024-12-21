@@ -11,13 +11,13 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	orderRoutes "washit-api/app/order/routes"
-	userRoutes "washit-api/app/user/routes"
-	"washit-api/configs"
-	dbs "washit-api/db"
 	_ "washit-api/docs"
-	"washit-api/redis"
-	"washit-api/utils"
+	orderRoutes "washit-api/internal/order/routes"
+	userRoutes "washit-api/internal/user/routes"
+	"washit-api/pkg/configs"
+	"washit-api/pkg/db/dbs"
+	"washit-api/pkg/redis"
+	"washit-api/pkg/utils"
 )
 
 type Server struct {
@@ -45,6 +45,7 @@ func (s *Server) Run() error {
 
 	s.engine.Use(gin.Recovery())
 	s.engine.Use(gin.Logger())
+	s.engine.HandleMethodNotAllowed = true
 
 	if err := s.MapRoutes(); err != nil {
 		log.Fatalf("Mapping routes: %v", err)
@@ -57,7 +58,7 @@ func (s *Server) Run() error {
 
 	log.Println("HTTP server is listening on PORT: ", s.addr)
 	if err := s.engine.Run(fmt.Sprintf(":%s", configs.Envs.Port)); err != nil {
-		log.Fatalf("Running HTTP server: %v", err)
+		log.Fatalf("Error running HTTP server: %v", err)
 	}
 
 	return nil
