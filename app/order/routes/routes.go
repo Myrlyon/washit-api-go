@@ -2,6 +2,7 @@ package orderRoutes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 
 	order "washit-api/app/order/handler"
 	orderRepository "washit-api/app/order/repository"
@@ -11,10 +12,10 @@ import (
 	"washit-api/redis"
 )
 
-func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, redis redis.RedisInterface) {
+func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, redis redis.RedisInterface, validator *validator.Validate) {
 	repository := orderRepository.NewOrderRepository(db)
 	service := orderService.NewOrderService(repository)
-	handler := order.NewOrderHandler(service, redis)
+	handler := order.NewOrderHandler(service, redis, validator)
 
 	authMiddleware := middleware.JWTAuth()
 	adminAuthMiddleware := middleware.JTWAuthAdmin()
@@ -25,7 +26,7 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, redis redis.RedisInterfa
 
 	// Order Post
 	r.POST("/order", authMiddleware, handler.CreateOrder)
-	// r.POST("/order/:id/cancel", authMiddleware, handler.CancelOrder)
+	r.PUT("/order/:id/cancel", authMiddleware, handler.CancelOrder)
 
 	// Order Update
 	// r.PUT("/order/:id/update", authMiddleware, handler.UpdapteOrder)
@@ -34,9 +35,10 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, redis redis.RedisInterfa
 
 	// Order Get
 	r.GET("/orders/all", adminAuthMiddleware, handler.GetOrdersAll)
-	r.GET("/orders/user/:id", adminAuthMiddleware, handler.GetOrdersUser)
+	r.GET("/orders/user/:id", adminAuthMiddleware, handler.GetOrdersByUser)
 
 	// Order Update
+	// r.PUT("/order/:id/update", )
 	// r.PUT("/order/:id/accept", adminAuthMiddleware, handler.AcceptOrder)
 	// r.PUT("/order/:id/reject", adminAuthMiddleware, handler.RejectOrder)
 	// r.PUT("/order/:id/complete", adminAuthMiddleware, handler.CompleteOrder)

@@ -1,8 +1,109 @@
 basePath: /api/v1
 definitions:
+  orderRequest.Order:
+    properties:
+      addressId:
+        type: integer
+      collectDate:
+        type: string
+      estimateDate:
+        type: string
+      id:
+        type: string
+      note:
+        type: string
+      orderType:
+        type: string
+      price:
+        type: number
+      serviceType:
+        type: string
+      status:
+        type: string
+      transactionId:
+        type: integer
+    required:
+    - addressId
+    - collectDate
+    - estimateDate
+    - orderType
+    - price
+    - serviceType
+    type: object
+  orderResource.Base:
+    properties:
+      addressId:
+        type: integer
+      collectDate:
+        type: string
+      createdAt:
+        type: string
+      estimateDate:
+        type: string
+      id:
+        type: string
+      note:
+        type: string
+      orderType:
+        type: string
+      price:
+        type: number
+      serviceType:
+        type: string
+      status:
+        type: string
+      transactionId:
+        type: integer
+      updatedAt:
+        type: string
+      userId:
+        type: integer
+    type: object
+  orderResource.Hypermedia:
+    properties:
+      cancel:
+        additionalProperties:
+          type: string
+        type: object
+      create:
+        additionalProperties:
+          type: string
+        type: object
+      self:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  orderResource.Order:
+    properties:
+      _links:
+        $ref: '#/definitions/orderResource.Hypermedia'
+      message:
+        type: string
+      order:
+        $ref: '#/definitions/orderResource.Base'
+    type: object
+  orderResource.OrderList:
+    properties:
+      message:
+        type: string
+      orders:
+        items:
+          $ref: '#/definitions/orderResource.Base'
+        type: array
+    type: object
+  userRequest.Google:
+    properties:
+      fcmToken:
+        type: string
+      idToken:
+        type: string
+    type: object
   userRequest.Login:
     properties:
       email:
+        type: string
+      fcmToken:
         type: string
       password:
         type: string
@@ -30,21 +131,20 @@ definitions:
     - lastName
     - password
     type: object
-  userResource.HideToken:
+  userRequest.Update:
     properties:
-      user:
-        $ref: '#/definitions/userResource.User'
-    type: object
-  userResource.ShowToken:
-    properties:
-      accessToken:
+      email:
         type: string
-      refreshToken:
+      firstName:
         type: string
-      user:
-        $ref: '#/definitions/userResource.User'
+      lastName:
+        type: string
+      password:
+        maxLength: 130
+        minLength: 3
+        type: string
     type: object
-  userResource.User:
+  userResource.Base:
     properties:
       createdAt:
         type: string
@@ -60,6 +160,15 @@ definitions:
         type: string
       role:
         type: string
+    type: object
+  userResource.User:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+      user:
+        $ref: '#/definitions/userResource.Base'
     type: object
 host: localhost:8080
 info:
@@ -91,8 +200,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.ShowToken'
+            $ref: '#/definitions/userResource.User'
       summary: Login as a user
+      tags:
+      - User
+  /auth/login/google:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Body
+        in: body
+        name: _
+        required: true
+        schema:
+          $ref: '#/definitions/userRequest.Google'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userResource.User'
+      summary: Login with Google
       tags:
       - User
   /auth/register:
@@ -112,10 +242,131 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/userResource.HideToken'
+            $ref: '#/definitions/userResource.User'
       summary: Register a new user
       tags:
       - User
+  /order:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Body
+        in: body
+        name: _
+        required: true
+        schema:
+          $ref: '#/definitions/orderRequest.Order'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Order
+      tags:
+      - Order
+  /order/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Order By ID
+      tags:
+      - Order
+  /order/{id}/cancel:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel Order
+      tags:
+      - Order
+  /orders:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.OrderList'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Orders Me
+      tags:
+      - Order
+  /orders/all:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.OrderList'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Orders All
+      tags:
+      - Order
+  /orders/user/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.OrderList'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Orders By User
+      tags:
+      - Order
   /profile/me:
     get:
       consumes:
@@ -126,10 +377,55 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.HideToken'
+            $ref: '#/definitions/userResource.User'
       security:
       - ApiKeyAuth: []
       summary: Get the current logged-in user
+      tags:
+      - User
+  /profile/update:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Body
+        in: body
+        name: _
+        required: true
+        schema:
+          $ref: '#/definitions/userRequest.Update'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/userResource.User'
+      security:
+      - ApiKeyAuth: []
+      summary: Update the current logged-in user
+      tags:
+      - User
+  /user/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userResource.Base'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a user by ID
       tags:
       - User
   /users:
@@ -142,7 +438,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.User'
+            $ref: '#/definitions/userResource.Base'
       security:
       - ApiKeyAuth: []
       summary: Get all users

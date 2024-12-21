@@ -2,7 +2,7 @@ package userService
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -11,11 +11,16 @@ import (
 	userRepository "washit-api/app/user/repository"
 	jwt "washit-api/token"
 	"washit-api/utils"
+
+	"firebase.google.com/go/auth"
+	"github.com/fatih/camelcase"
+	"github.com/gin-gonic/gin"
 )
 
 type UserServiceInterface interface {
 	RefreshToken(ctx context.Context, userId string) (string, error)
 	Register(ctx context.Context, req *userRequest.Register) (*userModel.User, error)
+	LoginWithGoogle(ctx context.Context, req *userRequest.Google, userInfo *auth.UserInfo) (*userModel.User, any, any, error)
 	Login(ctx context.Context, req *userRequest.Login) (*userModel.User, any, any, error)
 	Logout(ctx context.Context, userId string) error
 	GetMe(ctx context.Context, userId string) (*userModel.User, error)
@@ -39,26 +44,104 @@ func (s *UserService) RefreshToken(ctx context.Context, userId string) (string, 
 	user, err := s.repository.GetUserByID(ctx, userId)
 	if err != nil {
 		log.Println("Failed to get user by id ", err)
-		return "", err
+		return "", fmt.Errorf("user not found: %v", userId)
 	}
 
-	tokenData := map[string]interface{}{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
+	tokenData := gin.H{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
 
 	accessToken := jwt.GenerateAccessToken(tokenData)
 	return accessToken, nil
 }
 
+func (s *UserService) LoginWithGoogle(ctx context.Context, req *userRequest.Google, userInfo *auth.UserInfo) (*userModel.User, any, any, error) {
+	var user *userModel.User
+	user, err := s.repository.GetUserByEmail(ctx, userInfo.Email)
+	if err != nil {
+		log.Println("Error fetching user: ", err)
+		return nil, nil, nil, fmt.Errorf("unable to find user with email: %s", userInfo.Email)
+	}
+
+	if user == nil {
+		hashedPassword, err := utils.HashPassword(userInfo.UID)
+		if err != nil {
+			log.Println("Error encrypting password: ", err)
+			return nil, nil, nil, err
+		}
+
+		sId, err := utils.SnowflakeId(1)
+		if err != nil {
+			log.Println("Error generating snowflake ID: ", err)
+			return nil, nil, nil, err
+		}
+
+		SplittedName := camelcase.Split(userInfo.DisplayName)
+
+		imagePath, err := utils.TakeGoogleImage(userInfo.PhotoURL)
+		if err != nil {
+			log.Println("Error downloading Google profile image: ", err)
+			return nil, nil, nil, err
+		}
+
+		users := &userModel.User{
+			ID:        sId,
+			FirstName: SplittedName[0],
+			LastName:  SplittedName[1],
+			Email:     userInfo.Email,
+			Password:  hashedPassword,
+			Image:     imagePath,
+		}
+
+		if err := s.repository.CreateUser(ctx, users); err != nil {
+			log.Println("Error creating new user: ", err)
+			return nil, nil, nil, fmt.Errorf("failed to create user: %v", err)
+		}
+
+		user, err = s.repository.GetUserByEmail(ctx, users.Email)
+		if err != nil {
+			log.Println("Error fetching newly created user: ", err)
+			return nil, nil, nil, fmt.Errorf("failed to fetch user after creation: %v", err)
+		}
+	}
+
+	if req.FcmToken != "" {
+		data := &userModel.User{
+			ID:       user.ID,
+			FcmToken: req.FcmToken,
+		}
+		if err := s.repository.UpdateUser(ctx, data); err != nil {
+			log.Println("Failed to update fcm token ", err)
+			return nil, nil, nil, fmt.Errorf("failed to update fcm token: %v", err)
+		}
+	}
+
+	tokenData := gin.H{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
+	accessToken := jwt.GenerateAccessToken(tokenData)
+	refreshToken := jwt.GenerateRefreshToken(tokenData)
+	return user, accessToken, refreshToken, nil
+}
+
 func (s *UserService) Login(ctx context.Context, req *userRequest.Login) (*userModel.User, any, any, error) {
 	user, err := s.repository.GetUserByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, nil, nil, errors.New("invalid email or password")
+		return nil, nil, nil, fmt.Errorf("unable to find user with email: %s", req.Email)
 	}
 
 	if !utils.ComparePasswords(user.Password, []byte(req.Password)) {
-		return nil, nil, nil, errors.New("invalid email or password")
+		return nil, nil, nil, err
 	}
 
-	tokenData := map[string]interface{}{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
+	if req.FcmToken != "" {
+		data := &userModel.User{
+			ID:       user.ID,
+			FcmToken: req.FcmToken,
+		}
+		if err := s.repository.UpdateUser(ctx, data); err != nil {
+			log.Println("Failed to update fcm token ", err)
+			return nil, nil, nil, fmt.Errorf("failed to update fcm token: %v", err)
+		}
+	}
+
+	tokenData := gin.H{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
 
 	accessToken := jwt.GenerateAccessToken(tokenData)
 	refreshToken := jwt.GenerateRefreshToken(tokenData)
@@ -68,7 +151,7 @@ func (s *UserService) Login(ctx context.Context, req *userRequest.Login) (*userM
 func (s *UserService) Register(ctx context.Context, req *userRequest.Register) (*userModel.User, error) {
 	_, err := s.repository.GetUserByEmail(ctx, req.Email)
 	if err == nil {
-		return nil, errors.New("email already in use")
+		return nil, fmt.Errorf("user with email %s already exists", req.Email)
 	}
 
 	hashedPassword, err := utils.HashPassword(req.Password)
@@ -100,7 +183,7 @@ func (s *UserService) Register(ctx context.Context, req *userRequest.Register) (
 
 	if err := s.repository.CreateUser(ctx, user); err != nil {
 		log.Println("Failed to create user ", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create user: %v", err)
 	}
 
 	return user, nil
@@ -114,7 +197,7 @@ func (s *UserService) UpdateMe(ctx context.Context, userId string, req *userRequ
 	user, err := s.repository.GetUserByID(ctx, userId)
 	if err != nil {
 		log.Println("Failed to get user by id ", err)
-		return nil, err
+		return nil, fmt.Errorf("user not found: %v", userId)
 	}
 
 	if req.FirstName != "" {
@@ -136,7 +219,7 @@ func (s *UserService) UpdateMe(ctx context.Context, userId string, req *userRequ
 
 	if err := s.repository.UpdateUser(ctx, user); err != nil {
 		log.Println("Failed to update user ", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to update user: %v", err)
 	}
 
 	return user, nil
@@ -146,7 +229,7 @@ func (s *UserService) GetMe(ctx context.Context, userId string) (*userModel.User
 	user, err := s.repository.GetUserByID(ctx, userId)
 	if err != nil {
 		log.Println("Failed to get profile information", err)
-		return nil, err
+		return nil, fmt.Errorf("user not found: %v", userId)
 	}
 
 	return user, nil
@@ -156,7 +239,7 @@ func (s *UserService) GetUsers(ctx context.Context) ([]*userModel.User, error) {
 	user, err := s.repository.GetUsers(ctx)
 	if err != nil {
 		log.Println("Failed to get users ", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get users: %v", err)
 	}
 
 	return user, nil
@@ -166,7 +249,7 @@ func (s *UserService) GetUserByID(ctx context.Context, userId string) (*userMode
 	user, err := s.repository.GetUserByID(ctx, userId)
 	if err != nil {
 		log.Println("Failed to get user by id ", err)
-		return nil, err
+		return nil, fmt.Errorf("user not found: %v", userId)
 	}
 
 	return user, nil

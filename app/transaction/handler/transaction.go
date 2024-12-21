@@ -21,6 +21,6 @@ func NewTransactionHandler(service transactionService.TransactionServiceInterfac
 	}
 }
 
-func (h *TransactionHandler) GetTransactions(ctx *gin.Context) {
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"transactions": "transactions"})
+func (h *TransactionHandler) GetTransactions(c *gin.Context) {
+	utils.WriteJson(c, http.StatusOK, map[string]interface{}{"transactions": "transactions"})
 }

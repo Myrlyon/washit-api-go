@@ -69,3 +69,22 @@ func ValidateToken(jwtToken string) (map[string]interface{}, error) {
 	utils.CopyTo(tokenData["payload"], &data)
 	return data, nil
 }
+
+// func ValidateGoogleToken(jwtToken string) (map[string]interface{}, error) {
+// 	tokenData := jwt.MapClaims{}
+// 	token, err := jwt.ParseWithClaims(jwtToken, tokenData, func(token *jwt.Token) (interface{}, error) {
+// 		return []byte(configs.Envs.GoogleAuthSecret), nil
+// 	})
+
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	if !token.Valid {
+// 		return nil, jwt.ErrInvalidKey
+// 	}
+
+// 	var data map[string]interface{}
+// 	utils.CopyTo(tokenData["payload"], &data)
+// 	return data, nil
+// }
