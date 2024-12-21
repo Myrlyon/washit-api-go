@@ -11,6 +11,7 @@ type UserRepositoryInterface interface {
 	CreateUser(ctx context.Context, user *userModel.User) error
 	GetUserByID(ctx context.Context, userId string) (*userModel.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*userModel.User, error)
+	PutFcmToken(ctx context.Context, userId int64, fcmToken string) error
 	GetUsers(ctx context.Context) ([]*userModel.User, error)
 	UpdateUser(ctx context.Context, user *userModel.User) error
 }
@@ -25,6 +26,10 @@ func NewUserRepository(db dbs.DatabaseInterface) *UserRepository {
 
 func (r *UserRepository) CreateUser(ctx context.Context, user *userModel.User) error {
 	return r.db.Create(ctx, user)
+}
+
+func (r *UserRepository) PutFcmToken(ctx context.Context, userId int64, fcmToken string) error {
+	return r.db.Update(ctx, &userModel.User{ID: userId, FcmToken: fcmToken})
 }
 
 func (r *UserRepository) GetUserByID(ctx context.Context, userId string) (*userModel.User, error) {

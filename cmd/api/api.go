@@ -5,7 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	firebase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -19,18 +21,22 @@ import (
 )
 
 type Server struct {
-	addr   string
-	db     dbs.DatabaseInterface
-	cache  redis.RedisInterface
-	engine *gin.Engine
+	addr      string
+	db        dbs.DatabaseInterface
+	cache     redis.RedisInterface
+	engine    *gin.Engine
+	validator *validator.Validate
+	app       *firebase.App
 }
 
-func NewServer(db dbs.DatabaseInterface, cache redis.RedisInterface) *Server {
+func NewServer(validator *validator.Validate, db dbs.DatabaseInterface, cache redis.RedisInterface, app *firebase.App) *Server {
 	return &Server{
-		addr:   configs.Envs.Port,
-		db:     db,
-		cache:  cache,
-		engine: gin.Default(),
+		addr:      configs.Envs.Port,
+		db:        db,
+		cache:     cache,
+		engine:    gin.Default(),
+		validator: validator,
+		app:       app,
 	}
 }
 
@@ -60,8 +66,8 @@ func (s *Server) Run() error {
 func (s Server) MapRoutes() error {
 	v1 := s.engine.Group("/api/v1")
 	s.engine.Static("/public", "./public")
-	userRoutes.Main(v1, s.db, s.cache)
-	orderRoutes.Main(v1, s.db, s.cache)
+	userRoutes.Main(v1, s.db, s.cache, s.app, s.validator)
+	orderRoutes.Main(v1, s.db, s.cache, s.validator)
 	return nil
 }
 

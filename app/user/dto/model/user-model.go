@@ -9,6 +9,7 @@ type User struct {
 	Email     string    `json:"email" gorm:"unique"`
 	Role      string    `json:"role" gorm:"default:customer"`
 	Password  string    `json:"-"`
+	FcmToken  string    `json:"fcmToken"`
 	Image     string    `json:"image"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

@@ -7,3 +7,12 @@ docker:
 swagger:
 	@swag fmt
 	@swag init -g ./cmd/main.go -o ./docs
+
+up:
+	@go run cmd/migrate/main.go up
+
+down:
+	@go run cmd/migrate/main.go down
+
+test:
+	@go test -v ./app...

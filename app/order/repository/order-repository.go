@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 
+	historyModel "washit-api/app/history/dto/model"
 	orderModel "washit-api/app/order/dto/model"
 	dbs "washit-api/db"
 )
@@ -14,6 +15,8 @@ type OrderRepositoryInterface interface {
 	GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error)
 	GetOrderById(ctx context.Context, orderId string, userId string) (*orderModel.Order, error)
 	CreateOrder(ctx context.Context, order *orderModel.Order) (*orderModel.Order, error)
+	CreateHistory(ctx context.Context, history *historyModel.History) error
+	DeleteOrder(ctx context.Context, order *orderModel.Order) error
 }
 
 type OrderRepository struct {
@@ -42,7 +45,7 @@ func (r *OrderRepository) GetOrders(ctx context.Context, userId string) ([]*orde
 
 	log.Println("user" + userId)
 
-	if userId != "0" {
+	if userId != "" {
 		query = append(query, dbs.WithQuery(dbs.NewQuery("user_id = ?", userId)))
 	}
 
@@ -65,4 +68,20 @@ func (r *OrderRepository) GetOrderById(ctx context.Context, orderId string, user
 	}
 
 	return &order, nil
+}
+
+func (r *OrderRepository) CreateHistory(ctx context.Context, history *historyModel.History) error {
+	if err := r.db.Create(ctx, history); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *OrderRepository) DeleteOrder(ctx context.Context, order *orderModel.Order) error {
+	if err := r.db.Delete(ctx, order); err != nil {
+		return err
+	}
+
+	return nil
 }

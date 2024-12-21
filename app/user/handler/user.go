@@ -1,11 +1,14 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
 
+	firebase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 
 	userRequest "washit-api/app/user/dto/request"
 	userResource "washit-api/app/user/dto/resource"
@@ -17,32 +20,88 @@ import (
 )
 
 type UserHandler struct {
-	service userService.UserServiceInterface
-	cache   redis.RedisInterface
+	service   userService.UserServiceInterface
+	cache     redis.RedisInterface
+	app       *firebase.App
+	validator *validator.Validate
 }
 
-func NewUserHandler(service userService.UserServiceInterface, cache redis.RedisInterface) *UserHandler {
+func NewUserHandler(service userService.UserServiceInterface, cache redis.RedisInterface, app *firebase.App, validator *validator.Validate) *UserHandler {
 	return &UserHandler{
-		service: service,
-		cache:   cache,
+		service:   service,
+		cache:     cache,
+		app:       app,
+		validator: validator,
 	}
 }
 
-func (h *UserHandler) RefreshToken(ctx *gin.Context) {
-	userID := ctx.GetString("userId")
+func (h *UserHandler) RefreshToken(c *gin.Context) {
+	userID := c.GetString("userId")
 	if userID == "" {
-		utils.WriteError(ctx, http.StatusUnauthorized, errors.New("unauthorized"))
+		log.Println("Failed to get userId from context")
+		utils.WriteError(c, http.StatusUnauthorized, errors.New("unauthorized"))
 		return
 	}
 
-	accessToken, err := h.service.RefreshToken(ctx, userID)
+	accessToken, err := h.service.RefreshToken(c, userID)
 	if err != nil {
 		log.Println("Failed to refresh token ", err)
-		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"accessToken": accessToken})
+	utils.WriteJson(c, http.StatusOK, gin.H{"accessToken": accessToken})
+}
+
+// @Summary	Login with Google
+// @Tags		User
+// @Accept		json
+// @Produce	json
+// @Param		_	body		userRequest.Google	true	"Body"
+// @Success	200	{object}	userResource.User
+// @Router		/auth/login/google [post]
+func (h *UserHandler) LoginWithGoogle(c *gin.Context) {
+	var res userResource.User
+	var req userRequest.Google
+
+	if err := utils.ParseJson(c, &req); err != nil {
+		log.Println("Failed to parse request ", err)
+		utils.WriteError(c, http.StatusBadRequest, err)
+		return
+	}
+
+	client, err := h.app.Auth(context.Background())
+	if err != nil {
+		log.Println("Failed to initialize Firebase Auth ", err)
+		utils.WriteError(c, http.StatusInternalServerError, errors.New("Failed to initialize Firebase Auth"))
+		return
+	}
+
+	token, err := client.VerifyIDToken(context.Background(), req.IDToken)
+	if err != nil {
+		log.Println("Failed to verify ID token ", err)
+		utils.WriteError(c, http.StatusUnauthorized, errors.New("Invalid ID token"))
+		return
+	}
+
+	userRecord, err := client.GetUser(context.Background(), token.UID)
+	if err != nil {
+		log.Println("Failed to get user record ", err)
+		utils.WriteError(c, http.StatusInternalServerError, errors.New("Failed to retrieve user profile"))
+		return
+	}
+
+	user, accessToken, refreshToken, err := h.service.LoginWithGoogle(c, &req, userRecord.ProviderUserInfo[0])
+	if err != nil {
+		log.Println("Failed to login with Google ", err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.CopyTo(&user, &res.User)
+	utils.CopyTo(&accessToken, &res.AccessToken)
+	utils.CopyTo(&refreshToken, &res.RefreshToken)
+	utils.WriteJson(c, http.StatusOK, &res)
 }
 
 // @Summary	Login as a user
@@ -50,42 +109,44 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 // @Accept		json
 // @Produce	json
 // @Param		_	body		userRequest.Login	true	"Body"
-// @Success	200	{object}	userResource.ShowToken
+// @Success	200	{object}	userResource.User
 // @Router		/auth/login [post]
-func (h *UserHandler) Login(ctx *gin.Context) {
+func (h *UserHandler) Login(c *gin.Context) {
 	var req userRequest.Login
-	var res userResource.ShowToken
+	var res userResource.User
 
-	if err := utils.ParseJson(ctx, &req); err != nil {
-		utils.WriteError(ctx, http.StatusBadRequest, err)
+	if err := utils.ParseJson(c, &req); err != nil {
+		log.Println("Failed to parse request ", err)
+		utils.WriteError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	if err := utils.Validate.Struct(&req); err != nil {
-		utils.WriteError(ctx, http.StatusBadRequest, err)
+	if err := h.validator.Struct(&req); err != nil {
+		log.Println("Failed to validate request ", err)
+		utils.WriteError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	user, accessToken, refreshToken, err := h.service.Login(ctx, &req)
+	user, accessToken, refreshToken, err := h.service.Login(c, &req)
 	if err != nil {
 		log.Println("Failed to login as user ", err)
-		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	tokenString, ok := accessToken.(string)
 	if !ok {
 		log.Println("Failed to assert accessToken as string")
-		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	ctx.SetCookie("jwt", tokenString, jwt.AccessTokenExpiredTime, "/", "localhost", false, true)
+	c.SetCookie("jwt", tokenString, jwt.AccessTokenExpiredTime, "/", "localhost", false, true)
 
 	utils.CopyTo(&user, &res.User)
 	utils.CopyTo(&accessToken, &res.AccessToken)
 	utils.CopyTo(&refreshToken, &res.RefreshToken)
-	utils.WriteJson(ctx, http.StatusOK, &res)
+	utils.WriteJson(c, http.StatusOK, &res)
 }
 
 // @Summary	Register a new user
@@ -93,70 +154,77 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 // @Accept		json
 // @Produce	json
 // @Param		_	body		userRequest.Register	true	"Body"
-// @Success	201	{object}	userResource.HideToken
+// @Success	201	{object}	userResource.User
 // @Router		/auth/register [post]
-func (h *UserHandler) Register(ctx *gin.Context) {
+func (h *UserHandler) Register(c *gin.Context) {
 	var req userRequest.Register
-	var res userResource.HideToken
+	var res userResource.User
 
-	if err := utils.ParseJson(ctx, &req); err != nil {
-		utils.WriteError(ctx, http.StatusBadRequest, err)
+	if err := utils.ParseJson(c, &req); err != nil {
+		log.Println("Failed to parse request ", err)
+		utils.WriteError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	if err := utils.Validate.Struct(&req); err != nil {
-		utils.WriteError(ctx, http.StatusBadRequest, err)
+	if err := h.validator.Struct(&req); err != nil {
+		log.Println("Failed to validate request ", err)
+		utils.WriteError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	user, err := h.service.Register(ctx, &req)
+	user, err := h.service.Register(c, &req)
 	if err != nil {
 		log.Println("Failed to register user ", err)
-		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	utils.CopyTo(&user, &res.User)
-	utils.WriteJson(ctx, http.StatusCreated, &res)
+	utils.WriteJson(c, http.StatusCreated, &res)
 }
 
-func (h *UserHandler) Logout(ctx *gin.Context) {
-	ctx.SetCookie("jwt", "", -1, "/", "localhost", false, true)
-	utils.WriteJson(ctx, http.StatusOK, map[string]interface{}{"message": "Successfully logged out"})
+func (h *UserHandler) Logout(c *gin.Context) {
+	c.SetCookie("jwt", "", -1, "/", "localhost", false, true)
+	utils.WriteJson(c, http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
 // @Summary	Update the current logged-in user
 // @Tags		User
 // @Accept		json
 // @Produce	json
+// @Security	ApiKeyAuth
 // @Param		_	body		userRequest.Update	true	"Body"
-// @Success	201	{object}	userResource.HideToken
-// @Router		/profile/update [post]
-func (h *UserHandler) UpdateMe(ctx *gin.Context) {
+// @Success	201	{object}	userResource.User
+// @Router		/profile/update [put]
+func (h *UserHandler) UpdateMe(c *gin.Context) {
 	var req userRequest.Update
-	var res userResource.HideToken
+	var res userResource.User
 
-	if err := utils.ParseJson(ctx, &req); err != nil {
-		utils.WriteError(ctx, http.StatusBadRequest, err)
+	if err := utils.ParseJson(c, &req); err != nil {
+		log.Println("Failed to parse request ", err)
+		utils.WriteError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	if err := utils.Validate.Struct(&req); err != nil {
-		utils.WriteError(ctx, http.StatusBadRequest, err)
+	if err := h.validator.Struct(&req); err != nil {
+		log.Println("Failed to validate request ", err)
+		utils.WriteError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	userID := ctx.GetString("userId")
-
-	user, err := h.service.UpdateMe(ctx, userID, &req)
+	userID := c.GetString("userId")
+	user, err := h.service.UpdateMe(c, userID, &req)
 	if err != nil {
 		log.Println("Failed to update user ", err)
-		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
 		return
 	}
 
+	cacheKey := "/api/v1/profile/me"
+	_ = h.cache.Remove(cacheKey)
+
 	utils.CopyTo(&user, &res.User)
-	utils.WriteJson(ctx, http.StatusOK, &res)
+	utils.WriteJson(c, http.StatusOK, &res)
 }
 
 // @Summary	Get the current logged-in user
@@ -164,28 +232,27 @@ func (h *UserHandler) UpdateMe(ctx *gin.Context) {
 // @Accept		json
 // @Produce	json
 // @Security	ApiKeyAuth
-// @Success	200	{object}	userResource.HideToken
+// @Success	200	{object}	userResource.User
 // @Router		/profile/me [get]
-func (h *UserHandler) GetMe(ctx *gin.Context) {
-	var res userResource.HideToken
+func (h *UserHandler) GetMe(c *gin.Context) {
+	var res userResource.User
 
-	cacheKey := ctx.Request.URL.RequestURI()
-	err := h.cache.Get(cacheKey, &res)
-	if err == nil {
-		utils.WriteJson(ctx, http.StatusOK, &res)
+	cacheKey := c.Request.URL.RequestURI()
+	if err := h.cache.Get(cacheKey, &res); err == nil {
+		utils.WriteJson(c, http.StatusOK, &res)
 		return
 	}
 
-	userID := ctx.GetString("userId")
-	user, err := h.service.GetMe(ctx, userID)
+	userID := c.GetString("userId")
+	user, err := h.service.GetMe(c, userID)
 	if err != nil {
 		log.Println("Failed to get user ", err)
-		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	utils.CopyTo(&user, &res.User)
-	utils.WriteJson(ctx, http.StatusOK, &res)
+	utils.WriteJson(c, http.StatusOK, &res)
 	_ = h.cache.SetWithExpiration(cacheKey, &res, configs.ProductCachingTime)
 }
 
@@ -196,18 +263,18 @@ func (h *UserHandler) GetMe(ctx *gin.Context) {
 // @Security	ApiKeyAuth
 // @Success	200	{object}	userResource.Base
 // @Router		/users [get]
-func (h *UserHandler) GetUsers(ctx *gin.Context) {
+func (h *UserHandler) GetUsers(c *gin.Context) {
 	var res []userResource.Base
 
-	users, err := h.service.GetUsers(ctx)
+	users, err := h.service.GetUsers(c)
 	if err != nil {
 		log.Println("Failed to get users ", err)
-		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	utils.CopyTo(&users, &res)
-	utils.WriteJson(ctx, http.StatusOK, utils.ToData("users", &res))
+	utils.WriteJson(c, http.StatusOK, gin.H{"users": res})
 }
 
 // @Summary	Get a user by ID
@@ -215,18 +282,19 @@ func (h *UserHandler) GetUsers(ctx *gin.Context) {
 // @Accept		json
 // @Produce	json
 // @Security	ApiKeyAuth
+// @Param		id	path		string	true	"User ID"
 // @Success	200	{object}	userResource.Base
-// @Router		/user/:id [get]
-func (h *UserHandler) GetUserById(ctx *gin.Context) {
+// @Router		/user/{id} [get]
+func (h *UserHandler) GetUserById(c *gin.Context) {
 	var res userResource.Base
 
-	user, err := h.service.GetUserByID(ctx, ctx.Param("id"))
+	user, err := h.service.GetUserByID(c, c.Param("id"))
 	if err != nil {
 		log.Println("Failed to get user ", err)
-		utils.WriteError(ctx, http.StatusInternalServerError, err)
+		utils.WriteError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	utils.CopyTo(&user, &res)
-	utils.WriteJson(ctx, http.StatusOK, utils.ToData("user", &res))
+	utils.WriteJson(c, http.StatusOK, gin.H{"user": res})
 }

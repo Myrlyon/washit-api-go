@@ -1,7 +1,9 @@
 package userRoutes
 
 import (
+	firebase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 
 	user "washit-api/app/user/handler"
 	userRepository "washit-api/app/user/repository"
@@ -11,10 +13,10 @@ import (
 	"washit-api/redis"
 )
 
-func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface) {
+func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface, app *firebase.App, validator *validator.Validate) {
 	repository := userRepository.NewUserRepository(db)
 	service := userService.NewUserService(repository)
-	handler := user.NewUserHandler(service, cache)
+	handler := user.NewUserHandler(service, cache, app, validator)
 
 	authMiddleware := middleware.JWTAuth()
 	adminAuthMiddleware := middleware.JTWAuthAdmin()
@@ -25,8 +27,9 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterfa
 	// Auth
 	r.POST("/auth/register", handler.Register)
 	r.POST("/auth/login", handler.Login)
-	// r.POST("/auth/google", handler.GoogleAuth)
 	r.POST("/auth/logout", authMiddleware, handler.Logout)
+	r.GET("/auth/google", handler.Login)
+	r.POST("/auth/google/callback", handler.Login)
 
 	// Profile Get
 	r.GET("/profile/me", authMiddleware, handler.GetMe)

@@ -67,6 +67,14 @@ func (d *Database) AutoMigrate(models ...any) error {
 	return d.db.AutoMigrate(models...)
 }
 
+func (d *Database) Migrate(models ...any) error {
+	return d.db.Migrator().AutoMigrate(models...)	
+}
+
+func (d *Database) DropTable(models ...any) error {
+	return d.db.Migrator().DropTable(models...)
+}
+
 func (d *Database) WithTransaction(function func() error) error {
 	callback := func(db *gorm.DB) error {
 		return function()

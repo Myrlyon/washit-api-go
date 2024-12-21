@@ -11,6 +11,7 @@ type Register struct {
 type Login struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
+	FcmToken string `json:"fcmToken"`
 }
 
 type Update struct {
@@ -18,4 +19,9 @@ type Update struct {
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
 	Password  string `json:"password" validate:"min=3,max=130"`
+}
+
+type Google struct {
+	IDToken  string `json:"idToken"`
+	FcmToken string `json:"fcmToken"`
 }

@@ -2,7 +2,6 @@ package orderResource
 
 import (
 	"time"
-	"washit-api/utils"
 
 	"github.com/shopspring/decimal"
 )
@@ -23,12 +22,19 @@ type Base struct {
 	UpdatedAt     time.Time        `json:"updatedAt"`
 }
 
-type Order struct {
-	Message string `json:"message"`
-	Order   Base   `json:"order"`
+type OrderList struct {
+	Message string `json:"message,omitempty"`
+	Orders  []Base `json:"orders"`
 }
 
-type OrderWithLinks struct {
-	Order      Base                  `json:"order"`
-	Hypermedia map[string]utils.Link `json:"_links"`
+type Order struct {
+	Message    string     `json:"message,omitempty"`
+	Order      Base       `json:"order"`
+	Hypermedia Hypermedia `json:"_links,omitempty"`
+}
+
+type Hypermedia struct {
+	Self   map[string]string `json:"self,omitempty"`
+	Create map[string]string `json:"create,omitempty"`
+	Cancel map[string]string `json:"cancel,omitempty"`
 }

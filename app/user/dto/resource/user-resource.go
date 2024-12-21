@@ -14,16 +14,8 @@ type Base struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
-type ListUser struct {
-	User []Base `json:"users"`
-}
-
-type HideToken struct {
-	User Base `json:"user"`
-}
-
-type ShowToken struct {
+type User struct {
 	User         Base   `json:"user"`
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
+	AccessToken  string `json:"accessToken,omitempty"`
+	RefreshToken string `json:"refreshToken,omitempty"`
 }
