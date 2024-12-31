@@ -79,7 +79,7 @@ func (s *UserService) LoginWithGoogle(c context.Context, req *userRequest.Google
 
 		SplittedName := camelcase.Split(userInfo.DisplayName)
 
-		imagePath, err := utils.TakeGoogleImage(userInfo.PhotoURL)
+		imagePath, err := utils.DownloadImageFromUrl(userInfo.PhotoURL)
 		if err != nil {
 			log.Println("Error downloading Google profile image: ", err)
 			return nil, nil, nil, err
@@ -130,7 +130,7 @@ func (s *UserService) Login(c context.Context, req *userRequest.Login) (*userMod
 	}
 
 	if !utils.ComparePasswords(user.Password, []byte(req.Password)) {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("invalid password")
 	}
 
 	if user.IsBanned {
@@ -138,11 +138,8 @@ func (s *UserService) Login(c context.Context, req *userRequest.Login) (*userMod
 	}
 
 	if req.FcmToken != "" {
-		data := &userModel.User{
-			ID:       user.ID,
-			FcmToken: req.FcmToken,
-		}
-		if err := s.repository.UpdateUser(c, data); err != nil {
+		user.FcmToken = req.FcmToken
+		if err := s.repository.UpdateUser(c, user); err != nil {
 			log.Println("Failed to update fcm token ", err)
 			return nil, nil, nil, fmt.Errorf("failed to update fcm token: %v", err)
 		}
@@ -156,6 +153,8 @@ func (s *UserService) Login(c context.Context, req *userRequest.Login) (*userMod
 }
 
 func (s *UserService) Register(c context.Context, req *userRequest.Register) (*userModel.User, error) {
+	user := &userModel.User{}
+
 	_, err := s.repository.GetUserByEmail(c, req.Email)
 	if err == nil {
 		return nil, fmt.Errorf("user with email %s already exists", req.Email)
@@ -173,20 +172,18 @@ func (s *UserService) Register(c context.Context, req *userRequest.Register) (*u
 		return nil, err
 	}
 
-	imagePath, err := utils.MakeProfileImage(req.FirstName, req.LastName)
+	imagePath, err := utils.DownloadImageFromUrl(
+		"https://avatar.iran.liara.run/username?username=" + req.FirstName + "+" + req.LastName)
 	if err != nil {
-		log.Println("Failed to create profile image ", err)
+		log.Println("Error downloading profile image: ", err)
 		return nil, err
 	}
 
-	user := &userModel.User{
-		ID:        sId,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Email:     req.Email,
-		Password:  hashedPassword,
-		Image:     imagePath,
-	}
+	utils.CopyTo(&req, &user)
+
+	user.ID = sId
+	user.Password = hashedPassword
+	user.Image = imagePath
 
 	if err := s.repository.CreateUser(c, user); err != nil {
 		log.Println("Failed to create user ", err)

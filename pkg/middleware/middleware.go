@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	jwt "washit-api/pkg/token"
 )
@@ -42,6 +43,9 @@ func JWT(tokenType string, role string) gin.HandlerFunc {
 			return
 		}
 
+		requestID := uuid.New().String()
+
+		c.Set("requestId", requestID)
 		c.Set("userId", payload["id"])
 		c.Set("userRole", payload["role"])
 		c.Next()

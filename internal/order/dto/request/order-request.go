@@ -8,7 +8,7 @@ import (
 
 type Order struct {
 	ID            string           `json:"id"`
-	TransactionID int              `json:"transactionId"`
+	TransactionID string           `json:"transactionId"`
 	AddressID     int              `json:"addressId" validate:"required"`
 	Status        string           `json:"status"`
 	Note          string           `json:"note"`

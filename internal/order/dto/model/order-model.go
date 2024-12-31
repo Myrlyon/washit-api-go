@@ -11,12 +11,13 @@ import (
 type Order struct {
 	ID            string           `json:"id" gorm:"primaryKey unique"`
 	UserID        int              `json:"userId" gorm:"not null;index"`
-	TransactionID int              `json:"transactionId"`
+	TransactionID string           `json:"transactionId"`
 	AddressID     int              `json:"addressId"`
 	Status        string           `json:"status"`
 	Note          string           `json:"note"`
 	ServiceType   string           `json:"serviceType"`
-	OrderType     string           `json:"orderType"`
+	OrderType     string           `json:"orderType" gorm:"default:regular"`
+	Weight        *float64         `json:"weight"`
 	Price         *decimal.Decimal `json:"price" gorm:"type:numeric"`
 	CollectDate   time.Time        `json:"collectDate"`
 	EstimateDate  time.Time        `json:"estimateDate"`

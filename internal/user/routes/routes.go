@@ -46,5 +46,4 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterfa
 	r.GET("/user/:id", adminAuthMiddleware, handler.GetUserById)
 	r.PUT("/user/:id/ban", adminAuthMiddleware, handler.BanUser)
 	r.PUT("/user/:id/unban", adminAuthMiddleware, handler.UnbanUser)
-	// r.DELETE("/user/:id", adminAuthMiddleware, handler.DeleteUser)
 }

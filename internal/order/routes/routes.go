@@ -12,10 +12,10 @@ import (
 	"washit-api/pkg/redis"
 )
 
-func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, redis redis.RedisInterface, validator *validator.Validate) {
+func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface, validator *validator.Validate) {
 	repository := orderRepository.NewOrderRepository(db)
 	service := orderService.NewOrderService(repository)
-	handler := order.NewOrderHandler(service, redis, validator)
+	handler := order.NewOrderHandler(service, cache, validator)
 
 	authMiddleware := middleware.JWTAuth()
 	adminAuthMiddleware := middleware.JTWAuthAdmin()
@@ -43,5 +43,5 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, redis redis.RedisInterfa
 	// r.PUT("/order/:id/reject", adminAuthMiddleware, handler.RejectOrder)
 	// r.PUT("/order/:id/complete", adminAuthMiddleware, handler.CompleteOrder)
 	// r.PUT("/order/:id/status", adminAuthMiddleware, handler.UpdateOrderStatus)
-	// r.PUT("/order/:id/weight", adminAuthMiddleware, handler.UpdateOrderWeight)
+	r.PUT("/order/:id/weight/:weight", adminAuthMiddleware, handler.UpdateWeight)
 }
