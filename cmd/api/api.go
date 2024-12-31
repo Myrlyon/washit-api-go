@@ -53,7 +53,7 @@ func (s *Server) Run() error {
 
 	s.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	s.engine.GET("/ping", func(c *gin.Context) {
-		utils.WriteJson(c, http.StatusOK, "pong")
+		utils.SuccessResponse(c, http.StatusOK, "pong", nil, nil)
 	})
 
 	log.Println("HTTP server is listening on PORT: ", s.addr)

@@ -14,7 +14,7 @@ import (
 )
 
 type OrderServiceInterface interface {
-	GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error)
+	GetOrdersMe(ctx context.Context, userId string) ([]*orderModel.Order, error)
 	GetOrdersAll(ctx context.Context) ([]*orderModel.Order, error)
 	GetOrderById(ctx context.Context, orderId string, userId string) (*orderModel.Order, error)
 	GetOrdersByUser(ctx context.Context, userId string) ([]*orderModel.Order, error)
@@ -56,7 +56,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, userId int, req *orderRe
 	return order, nil
 }
 
-func (s *OrderService) GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error) {
+func (s *OrderService) GetOrdersMe(ctx context.Context, userId string) ([]*orderModel.Order, error) {
 	order, err := s.repository.GetOrders(ctx, userId)
 	if err != nil {
 		log.Println("Failed to get Orders me")
@@ -129,6 +129,7 @@ func (s *OrderService) CancelOrder(ctx context.Context, orderId string, userId s
 	}
 
 	utils.CopyTo(&order, &history)
+	history.Reason = "cancelled"
 
 	if err := s.repository.CreateHistory(ctx, &history); err != nil {
 		log.Println("Failed to move order to history", err)

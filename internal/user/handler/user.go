@@ -140,7 +140,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	tokenString, ok := accessToken.(string)
 	if !ok {
 		log.Println("Failed to assert accessToken as string")
-		utils.WriteError(c, http.StatusInternalServerError, errors.New("Failed to assert accessToken as string"))
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to assert accessToken as string", errors.New("Failed to assert accessToken as string"))
 		return
 	}
 

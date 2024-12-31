@@ -22,5 +22,5 @@ func NewTransactionHandler(service transactionService.TransactionServiceInterfac
 }
 
 func (h *TransactionHandler) GetTransactions(c *gin.Context) {
-	utils.WriteJson(c, http.StatusOK, map[string]interface{}{"transactions": "transactions"})
+	utils.SuccessResponse(c, http.StatusOK, "Test", nil, nil)
 }

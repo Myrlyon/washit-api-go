@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -72,21 +71,6 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 		},
 	}
 	c.JSON(statusCode, response)
-}
-
-func WriteJson(c *gin.Context, statusCode int, data interface{}) {
-	c.Header("Content-Type", "application/json")
-	c.Writer.WriteHeader(statusCode)
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	c.Writer.Write(jsonData)
-}
-
-func WriteError(c *gin.Context, status int, err error) {
-	WriteJson(c, status, map[string]interface{}{"error": err.Error()})
 }
 
 func ParseJson(c *gin.Context, v any) error {

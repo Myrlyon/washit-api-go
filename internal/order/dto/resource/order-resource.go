@@ -6,7 +6,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type Base struct {
+type Order struct {
 	ID            string           `json:"id" gorm:"primaryKey"`
 	UserID        int              `json:"userId" gorm:"not null;index"`
 	TransactionID string           `json:"transactionId"`

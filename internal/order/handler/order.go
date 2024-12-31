@@ -45,25 +45,28 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	var res orderResource.Order
 
 	if err := utils.ParseJson(c, &req); err != nil {
-		utils.WriteError(c, http.StatusBadRequest, err)
+		log.Println("Failed to parse request body ", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to parse request body", err)
 		return
 	}
 
 	if err := h.validator.Struct(&req); err != nil {
-		utils.WriteError(c, http.StatusBadRequest, err)
+		log.Println("Failed to validate request body ", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to validate request body", err)
 		return
 	}
 
 	userId, err := strconv.Atoi(c.GetString("userId"))
 	if err != nil {
-		utils.WriteError(c, http.StatusBadRequest, err)
+		log.Println("Failed to get user id ", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to get user id", err)
 		return
 	}
 
 	order, err := h.service.CreateOrder(c, userId, &req)
 	if err != nil {
 		log.Println("Failed to create order ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create order", err)
 		return
 	}
 
@@ -87,7 +90,7 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	order, err := h.service.CancelOrder(c, c.Param("id"), c.GetString("userId"))
 	if err != nil {
 		log.Println("Failed to get order ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get order", err)
 		return
 	}
 
@@ -118,7 +121,7 @@ func (h *OrderHandler) GetOrderById(c *gin.Context) {
 	order, err := h.service.GetOrderById(c, c.Param("id"), userId)
 	if err != nil {
 		log.Println("Failed to get order ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get order", err)
 		return
 	}
 
@@ -136,17 +139,17 @@ func (h *OrderHandler) GetOrderById(c *gin.Context) {
 func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
 	var res []orderResource.Order
 
-	log.Println("Cache key: ", ordersCacheKey)
 	if err := h.cache.Get(ordersCacheKey, &res); err == nil {
-		utils.WriteJson(c, http.StatusOK, &res)
+		log.Println("Failed to get orders ", err)
+		utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
 		return
 	}
 
 	userId := c.GetString("userId")
-	orders, err := h.service.GetOrders(c, userId)
+	orders, err := h.service.GetOrdersMe(c, userId)
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
@@ -168,6 +171,7 @@ func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
 
 	err := h.cache.Get(ordersCacheKey, &res)
 	if err == nil {
+		log.Println("Failed to get orders ", err)
 		utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
 		return
 	}
@@ -175,7 +179,7 @@ func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
 	orders, err := h.service.GetOrdersAll(c)
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
@@ -199,7 +203,7 @@ func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 	orders, err := h.service.GetOrdersByUser(c, c.Param("id"))
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
@@ -210,9 +214,15 @@ func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 func (h *OrderHandler) UpdateWeight(c *gin.Context) {
 	var res orderResource.Order
 
+	if _, err := strconv.ParseFloat(c.Param("weight"), 64); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "weight must be a number", err)
+		return
+	}
+
 	order, err := h.service.UpdateWeight(c, c.Param("id"), c.Param("weight"))
 	if err != nil {
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		log.Println("Failed to update weight ", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to update weight", err)
 		return
 	}
 
