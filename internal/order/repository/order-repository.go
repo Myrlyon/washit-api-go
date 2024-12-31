@@ -3,7 +3,6 @@ package orderRepository
 import (
 	"context"
 	"errors"
-	"log"
 	"strconv"
 
 	historyModel "washit-api/internal/history/dto/model"
@@ -17,6 +16,7 @@ type OrderRepositoryInterface interface {
 	CreateOrder(ctx context.Context, order *orderModel.Order) (*orderModel.Order, error)
 	CreateHistory(ctx context.Context, history *historyModel.History) error
 	DeleteOrder(ctx context.Context, order *orderModel.Order) error
+	UpdateOrder(ctx context.Context, order *orderModel.Order) error
 }
 
 type OrderRepository struct {
@@ -42,8 +42,6 @@ func (r *OrderRepository) GetOrders(ctx context.Context, userId string) ([]*orde
 		dbs.WithOrder("created_at DESC"),
 		dbs.WithPreload([]string{"User"}),
 	}
-
-	log.Println("user" + userId)
 
 	if userId != "" {
 		query = append(query, dbs.WithQuery(dbs.NewQuery("user_id = ?", userId)))
@@ -80,6 +78,14 @@ func (r *OrderRepository) CreateHistory(ctx context.Context, history *historyMod
 
 func (r *OrderRepository) DeleteOrder(ctx context.Context, order *orderModel.Order) error {
 	if err := r.db.Delete(ctx, order); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *OrderRepository) UpdateOrder(ctx context.Context, order *orderModel.Order) error {
+	if err := r.db.Update(ctx, order); err != nil {
 		return err
 	}
 

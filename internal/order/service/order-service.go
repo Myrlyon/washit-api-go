@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	historyModel "washit-api/internal/history/dto/model"
 	orderModel "washit-api/internal/order/dto/model"
@@ -13,12 +14,13 @@ import (
 )
 
 type OrderServiceInterface interface {
-	GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error)
+	GetOrdersMe(ctx context.Context, userId string) ([]*orderModel.Order, error)
 	GetOrdersAll(ctx context.Context) ([]*orderModel.Order, error)
 	GetOrderById(ctx context.Context, orderId string, userId string) (*orderModel.Order, error)
 	GetOrdersByUser(ctx context.Context, userId string) ([]*orderModel.Order, error)
 	CreateOrder(ctx context.Context, userId int, req *orderRequest.Order) (*orderModel.Order, error)
 	CancelOrder(ctx context.Context, orderId string, userId string) (*orderModel.Order, error)
+	UpdateWeight(ctx context.Context, orderId string, weight string) (*orderModel.Order, error)
 }
 
 type OrderService struct {
@@ -33,25 +35,17 @@ func NewOrderService(
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, userId int, req *orderRequest.Order) (*orderModel.Order, error) {
+	order := &orderModel.Order{}
+
 	ordId, err := utils.AlphaNumericId("ORD")
 	if err != nil {
 		log.Println("Failed to generate Order ID ", err)
 		return nil, err
 	}
 
-	order := &orderModel.Order{
-		ID:            ordId,
-		UserID:        userId,
-		TransactionID: req.TransactionID,
-		AddressID:     req.AddressID,
-		Status:        req.Status,
-		Note:          req.Note,
-		ServiceType:   req.ServiceType,
-		OrderType:     req.OrderType,
-		Price:         req.Price,
-		CollectDate:   req.CollectDate,
-		EstimateDate:  req.EstimateDate,
-	}
+	utils.CopyTo(&req, &order)
+	order.ID = ordId
+	order.UserID = userId
 
 	order, err = s.repository.CreateOrder(ctx, order)
 	if err != nil {
@@ -62,7 +56,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, userId int, req *orderRe
 	return order, nil
 }
 
-func (s *OrderService) GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error) {
+func (s *OrderService) GetOrdersMe(ctx context.Context, userId string) ([]*orderModel.Order, error) {
 	order, err := s.repository.GetOrders(ctx, userId)
 	if err != nil {
 		log.Println("Failed to get Orders me")
@@ -102,6 +96,29 @@ func (s *OrderService) GetOrderById(ctx context.Context, orderId string, userId 
 	return order, nil
 }
 
+func (s *OrderService) UpdateWeight(ctx context.Context, orderId string, weight string) (*orderModel.Order, error) {
+	order, err := s.repository.GetOrderById(ctx, orderId, "0")
+	if err != nil {
+		log.Println("Failed to get Order by id", err)
+		return nil, fmt.Errorf("failed to get order by id: %v", orderId)
+	}
+
+	weightFloat, err := strconv.ParseFloat(weight, 64)
+	if err != nil {
+		log.Println("Failed to parse weight", err)
+		return nil, fmt.Errorf("failed to parse weight: %v", weight)
+	}
+
+	order.Weight = &weightFloat
+
+	if err := s.repository.UpdateOrder(ctx, order); err != nil {
+		log.Println("Failed to update order weight by ID:", err)
+		return nil, fmt.Errorf("failed to update order weight by ID: %v", orderId)
+	}
+
+	return order, nil
+}
+
 func (s *OrderService) CancelOrder(ctx context.Context, orderId string, userId string) (*orderModel.Order, error) {
 	var history historyModel.History
 
@@ -112,6 +129,7 @@ func (s *OrderService) CancelOrder(ctx context.Context, orderId string, userId s
 	}
 
 	utils.CopyTo(&order, &history)
+	history.Reason = "cancelled"
 
 	if err := s.repository.CreateHistory(ctx, &history); err != nil {
 		log.Println("Failed to move order to history", err)

@@ -11,11 +11,8 @@ import (
 	"golang.org/x/exp/rand"
 )
 
-func TakeGoogleImage(imageUrl string) (imagePath string, err error) {
-	sId, err := SnowflakeId(1)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate Snowflake ID: %w", err)
-	}
+func DownloadImageFromUrl(imageUrl string) (imagePath string, err error) {
+	sId := time.Now().UnixNano()
 	savePath := fmt.Sprintf("./public/profilePic/%d.jpg", sId)
 
 	err = os.MkdirAll("./public/profilePic", os.ModePerm)
@@ -26,34 +23,6 @@ func TakeGoogleImage(imageUrl string) (imagePath string, err error) {
 	client := resty.New()
 
 	resp, err := client.R().SetOutput(savePath).Get(imageUrl)
-	if err != nil {
-		return "", fmt.Errorf("failed to get image: %w", err)
-	}
-
-	if resp.StatusCode() != 200 {
-		return "", fmt.Errorf("failed to download image, status: %s", resp.Status())
-	}
-
-	return fmt.Sprintf("%d.jpg", sId), nil
-}
-
-func MakeProfileImage(firstName string, lastName string) (imagePath string, err error) {
-	sId, err := SnowflakeId(1)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate Snowflake ID: %w", err)
-	}
-
-	imageURL := "https://avatar.iran.liara.run/username?username=" + firstName + "+" + lastName
-	savePath := fmt.Sprintf("./public/profilePic/%d.jpg", sId)
-
-	err = os.MkdirAll("./public/profilePic", os.ModePerm)
-	if err != nil {
-		return "", fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	client := resty.New()
-
-	resp, err := client.R().SetOutput(savePath).Get(imageURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to get image: %w", err)
 	}

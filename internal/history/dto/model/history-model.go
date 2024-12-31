@@ -15,6 +15,7 @@ type History struct {
 	ServiceType   string         `json:"serviceType"`
 	OrderType     string         `json:"orderType"`
 	Price         float64        `json:"price"`
+	Reason        string         `json:"reason"`
 	CollectDate   time.Time      `json:"collectDate"`
 	EstimateDate  time.Time      `json:"estimateDate"`
 	DeletedAt     time.Time      `json:"deletedAt"`

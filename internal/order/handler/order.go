@@ -45,32 +45,33 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	var res orderResource.Order
 
 	if err := utils.ParseJson(c, &req); err != nil {
-		utils.WriteError(c, http.StatusBadRequest, err)
+		log.Println("Failed to parse request body ", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to parse request body", err)
 		return
 	}
 
 	if err := h.validator.Struct(&req); err != nil {
-		utils.WriteError(c, http.StatusBadRequest, err)
+		log.Println("Failed to validate request body ", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to validate request body", err)
 		return
 	}
 
 	userId, err := strconv.Atoi(c.GetString("userId"))
 	if err != nil {
-		utils.WriteError(c, http.StatusBadRequest, err)
+		log.Println("Failed to get user id ", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to get user id", err)
 		return
 	}
 
 	order, err := h.service.CreateOrder(c, userId, &req)
 	if err != nil {
 		log.Println("Failed to create order ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create order", err)
 		return
 	}
 
-	utils.CopyTo(order, &res.Order)
-	res.Hypermedia = links(order.ID)
-	res.Message = "order is created succesfully"
-	utils.WriteJson(c, http.StatusCreated, &res)
+	utils.CopyTo(order, &res)
+	utils.SuccessResponse(c, http.StatusCreated, "order is created successfully", &res, links(res.ID))
 
 	_ = h.cache.Remove(ordersCacheKey)
 }
@@ -89,14 +90,12 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	order, err := h.service.CancelOrder(c, c.Param("id"), c.GetString("userId"))
 	if err != nil {
 		log.Println("Failed to get order ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get order", err)
 		return
 	}
 
-	utils.CopyTo(&order, &res.Order)
-	res.Hypermedia = links(order.ID)
-	res.Message = "order is cancelled succesfully"
-	utils.WriteJson(c, http.StatusOK, &res)
+	utils.CopyTo(&order, &res)
+	utils.SuccessResponse(c, http.StatusOK, "order is cancelled successfully", &res, links(res.ID))
 
 	_ = h.cache.Remove(ordersCacheKey)
 }
@@ -122,14 +121,12 @@ func (h *OrderHandler) GetOrderById(c *gin.Context) {
 	order, err := h.service.GetOrderById(c, c.Param("id"), userId)
 	if err != nil {
 		log.Println("Failed to get order ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get order", err)
 		return
 	}
 
-	utils.CopyTo(&order, &res.Order)
-	res.Hypermedia = links(order.ID)
-	res.Message = "order is collected successfully"
-	utils.WriteJson(c, http.StatusOK, &res)
+	utils.CopyTo(&order, &res)
+	utils.SuccessResponse(c, http.StatusOK, "order is collected successfully", &res, links(res.ID))
 }
 
 // @Summary	Get Orders Me
@@ -140,28 +137,26 @@ func (h *OrderHandler) GetOrderById(c *gin.Context) {
 // @Success	200	{object}	orderResource.OrderList
 // @Router		/orders [get]
 func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
-	var res orderResource.OrderList
+	var res []orderResource.Order
 
-	cacheKey := c.Request.URL.RequestURI()
-	log.Println("Cache key: ", cacheKey)
-	if err := h.cache.Get(cacheKey, &res); err == nil {
-		utils.WriteJson(c, http.StatusOK, &res)
+	if err := h.cache.Get(ordersCacheKey, &res); err == nil {
+		log.Println("Failed to get orders ", err)
+		utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
 		return
 	}
 
 	userId := c.GetString("userId")
-	orders, err := h.service.GetOrders(c, userId)
+	orders, err := h.service.GetOrdersMe(c, userId)
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
-	utils.CopyTo(&orders, &res.Orders)
-	res.Message = "orders are collected successfully"
-	utils.WriteJson(c, http.StatusOK, &res)
+	utils.CopyTo(&orders, &res)
+	utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
 
-	_ = h.cache.SetWithExpiration(cacheKey, &res, configs.ProductCachingTime)
+	_ = h.cache.SetWithExpiration(ordersCacheKey, &res, configs.ProductCachingTime)
 }
 
 // @Summary	Get Orders All
@@ -172,27 +167,26 @@ func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
 // @Success	200	{object}	orderResource.OrderList
 // @Router		/orders/all [get]
 func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
-	var res orderResource.OrderList
+	var res []orderResource.Order
 
-	cacheKey := c.Request.URL.RequestURI()
-	err := h.cache.Get(cacheKey, &res)
+	err := h.cache.Get(ordersCacheKey, &res)
 	if err == nil {
-		utils.WriteJson(c, http.StatusOK, &res)
+		log.Println("Failed to get orders ", err)
+		utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
 		return
 	}
 
 	orders, err := h.service.GetOrdersAll(c)
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
-	utils.CopyTo(&orders, &res.Orders)
-	res.Message = "orders are collected successfully"
-	utils.WriteJson(c, http.StatusOK, &res)
+	utils.CopyTo(&orders, &res)
+	utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
 
-	_ = h.cache.SetWithExpiration(cacheKey, &res, configs.ProductCachingTime)
+	_ = h.cache.SetWithExpiration(ordersCacheKey, &res, configs.ProductCachingTime)
 }
 
 // @Summary	Get Orders By User
@@ -204,24 +198,43 @@ func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
 // @Success	200	{object}	orderResource.OrderList
 // @Router		/orders/user/{id} [get]
 func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
-	var res orderResource.OrderList
+	var res []orderResource.Order
 
 	orders, err := h.service.GetOrdersByUser(c, c.Param("id"))
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.WriteError(c, http.StatusInternalServerError, err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
-	utils.CopyTo(&orders, &res.Orders)
-	res.Message = "orders are collected successfully"
-	utils.WriteJson(c, http.StatusOK, &res)
+	utils.CopyTo(&orders, &res)
+	utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
 }
 
-var links = func(orderID string) orderResource.Hypermedia {
-	return orderResource.Hypermedia{
-		Self:   map[string]string{"href": "/api/v1/order/" + orderID, "method": "GET"},
-		Create: map[string]string{"href": "/api/v1/order", "method": "POST"},
-		Cancel: map[string]string{"href": "/api/v1/order/" + orderID + "/cancel", "method": "PUT"},
+func (h *OrderHandler) UpdateWeight(c *gin.Context) {
+	var res orderResource.Order
+
+	if _, err := strconv.ParseFloat(c.Param("weight"), 64); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "weight must be a number", err)
+		return
+	}
+
+	order, err := h.service.UpdateWeight(c, c.Param("id"), c.Param("weight"))
+	if err != nil {
+		log.Println("Failed to update weight ", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to update weight", err)
+		return
+	}
+
+	utils.CopyTo(&order, &res)
+	utils.SuccessResponse(c, http.StatusOK, "weight is updated successfully", &res, links(res.ID))
+}
+
+var links = func(orderId string) map[string]utils.HypermediaLink {
+	return map[string]utils.HypermediaLink{
+		"self": {
+			Href:   "/order/" + orderId,
+			Method: "GET",
+		},
 	}
 }

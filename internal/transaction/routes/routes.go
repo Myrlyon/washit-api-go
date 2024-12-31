@@ -1,12 +1,12 @@
 package transactionRoutes
 
 import (
-	transaction "washit-api/app/transaction/handler"
-	transactionRepository "washit-api/app/transaction/repository"
-	transactionService "washit-api/app/transaction/service"
-	dbs "washit-api/db"
-	"washit-api/middleware"
-	"washit-api/redis"
+	transaction "washit-api/internal/transaction/handler"
+	transactionRepository "washit-api/internal/transaction/repository"
+	transactionService "washit-api/internal/transaction/service"
+	"washit-api/pkg/db/dbs"
+	"washit-api/pkg/middleware"
+	"washit-api/pkg/redis"
 
 	"github.com/gin-gonic/gin"
 )
