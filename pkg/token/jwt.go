@@ -1,10 +1,13 @@
 package jwt
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 
 	"washit-api/pkg/configs"
@@ -70,21 +73,22 @@ func ValidateToken(jwtToken string) (map[string]interface{}, error) {
 	return data, nil
 }
 
-// func ValidateGoogleToken(jwtToken string) (map[string]interface{}, error) {
-// 	tokenData := jwt.MapClaims{}
-// 	token, err := jwt.ParseWithClaims(jwtToken, tokenData, func(token *jwt.Token) (interface{}, error) {
-// 		return []byte(configs.Envs.GoogleAuthSecret), nil
-// 	})
+func ParseJson(c *gin.Context, v any) error {
+	if c.Request.Body == nil {
+		return fmt.Errorf("missing request body")
+	}
+	return json.NewDecoder(c.Request.Body).Decode(v)
+}
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func CopyTo(src interface{}, dest interface{}) {
+	data, _ := json.Marshal(src)
+	_ = json.Unmarshal(data, dest)
+}
 
-// 	if !token.Valid {
-// 		return nil, jwt.ErrInvalidKey
-// 	}
-
-// 	var data map[string]interface{}
-// 	utils.CopyTo(tokenData["payload"], &data)
-// 	return data, nil
-// }
+func ToData(title string, ConvertedData any) (responseData any) {
+	responseData = map[string]interface{}{
+		"message": title + " is collected successfully",
+		title:     ConvertedData,
+	}
+	return
+}

@@ -9,6 +9,8 @@ import (
 	userModel "washit-api/internal/user/dto/model"
 	userRequest "washit-api/internal/user/dto/request"
 	userRepository "washit-api/internal/user/repository"
+	auths "washit-api/pkg/auth"
+	generate "washit-api/pkg/generator"
 	jwt "washit-api/pkg/token"
 	"washit-api/pkg/utils"
 
@@ -17,7 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserServiceInterface interface {
+type IUserService interface {
 	RefreshToken(c context.Context, userId string) (string, error)
 	Register(c context.Context, req *userRequest.Register) (*userModel.User, error)
 	LoginWithGoogle(c context.Context, req *userRequest.Google, userInfo *auth.UserInfo) (*userModel.User, any, any, error)
@@ -29,15 +31,16 @@ type UserServiceInterface interface {
 	GetUserByID(c context.Context, userId string) (*userModel.User, error)
 	GetUsers(c context.Context) ([]*userModel.User, error)
 	GetBannedUsers(c context.Context) ([]*userModel.User, error)
-	UpdateMe(c context.Context, userId string, req *userRequest.Update) (*userModel.User, error)
+	UpdateMe(c context.Context, userId string, req *userRequest.UpdateProfile) (*userModel.User, error)
+	UpdatePassword(c context.Context, userId string, req *userRequest.UpdatePassword) error
 }
 
 type UserService struct {
-	repository userRepository.UserRepositoryInterface
+	repository userRepository.IUserRepository
 }
 
 func NewUserService(
-	repository userRepository.UserRepositoryInterface) *UserService {
+	repository userRepository.IUserRepository) *UserService {
 	return &UserService{
 		repository: repository,
 	}
@@ -57,21 +60,21 @@ func (s *UserService) RefreshToken(c context.Context, userId string) (string, er
 }
 
 func (s *UserService) LoginWithGoogle(c context.Context, req *userRequest.Google, userInfo *auth.UserInfo) (*userModel.User, any, any, error) {
-	var user *userModel.User
 	user, err := s.repository.GetUserByEmail(c, userInfo.Email)
 	if err != nil {
-		log.Println("Error fetching user: ", err)
-		return nil, nil, nil, fmt.Errorf("unable to find user with email: %s", userInfo.Email)
-	}
+		randomPassword, err := generate.RandomPassword()
+		if err != nil {
+			log.Println("Error generating random password: ", err)
+			return nil, nil, nil, err
+		}
 
-	if user == nil {
-		hashedPassword, err := utils.HashPassword(userInfo.UID)
+		hashedPassword, err := auths.HashPassword(randomPassword)
 		if err != nil {
 			log.Println("Error encrypting password: ", err)
 			return nil, nil, nil, err
 		}
 
-		sId, err := utils.SnowflakeId(1)
+		sId, err := generate.SnowflakeId(1)
 		if err != nil {
 			log.Println("Error generating snowflake ID: ", err)
 			return nil, nil, nil, err
@@ -79,7 +82,7 @@ func (s *UserService) LoginWithGoogle(c context.Context, req *userRequest.Google
 
 		SplittedName := camelcase.Split(userInfo.DisplayName)
 
-		imagePath, err := utils.DownloadImageFromUrl(userInfo.PhotoURL)
+		imagePath, err := generate.ImageFromUrl(userInfo.PhotoURL)
 		if err != nil {
 			log.Println("Error downloading Google profile image: ", err)
 			return nil, nil, nil, err
@@ -117,9 +120,14 @@ func (s *UserService) LoginWithGoogle(c context.Context, req *userRequest.Google
 		}
 	}
 
-	tokenData := gin.H{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
+	tokenData := gin.H{
+		"id":   strconv.FormatInt(user.ID, 10),
+		"role": user.Role,
+	}
+
 	accessToken := jwt.GenerateAccessToken(tokenData)
 	refreshToken := jwt.GenerateRefreshToken(tokenData)
+
 	return user, accessToken, refreshToken, nil
 }
 
@@ -129,7 +137,7 @@ func (s *UserService) Login(c context.Context, req *userRequest.Login) (*userMod
 		return nil, nil, nil, fmt.Errorf("unable to find user with email: %s", req.Email)
 	}
 
-	if !utils.ComparePasswords(user.Password, []byte(req.Password)) {
+	if !auths.ComparePasswords(user.Password, []byte(req.Password)) {
 		return nil, nil, nil, fmt.Errorf("invalid password")
 	}
 
@@ -145,10 +153,14 @@ func (s *UserService) Login(c context.Context, req *userRequest.Login) (*userMod
 		}
 	}
 
-	tokenData := gin.H{"id": strconv.FormatInt(user.ID, 10), "role": user.Role}
+	tokenData := gin.H{
+		"id":   strconv.FormatInt(user.ID, 10),
+		"role": user.Role,
+	}
 
 	accessToken := jwt.GenerateAccessToken(tokenData)
 	refreshToken := jwt.GenerateRefreshToken(tokenData)
+
 	return user, accessToken, refreshToken, nil
 }
 
@@ -160,19 +172,19 @@ func (s *UserService) Register(c context.Context, req *userRequest.Register) (*u
 		return nil, fmt.Errorf("user with email %s already exists", req.Email)
 	}
 
-	hashedPassword, err := utils.HashPassword(req.Password)
+	hashedPassword, err := auths.HashPassword(req.Password)
 	if err != nil {
 		log.Println("Password failed to be encrypted: ", err)
 		return nil, err
 	}
 
-	sId, err := utils.SnowflakeId(1)
+	sId, err := generate.SnowflakeId(1)
 	if err != nil {
 		log.Println("Failed to generate snowflake id ", err)
 		return nil, err
 	}
 
-	imagePath, err := utils.DownloadImageFromUrl(
+	imagePath, err := generate.ImageFromUrl(
 		"https://avatar.iran.liara.run/username?username=" + req.FirstName + "+" + req.LastName)
 	if err != nil {
 		log.Println("Error downloading profile image: ", err)
@@ -239,7 +251,7 @@ func (s *UserService) UnbanUser(c context.Context, userId string) (*userModel.Us
 	return user, nil
 }
 
-func (s *UserService) UpdateMe(c context.Context, userId string, req *userRequest.Update) (*userModel.User, error) {
+func (s *UserService) UpdateMe(c context.Context, userId string, req *userRequest.UpdateProfile) (*userModel.User, error) {
 	user, err := s.repository.GetUserByID(c, userId)
 	if err != nil {
 		log.Println("Failed to get user by id ", err)
@@ -255,13 +267,6 @@ func (s *UserService) UpdateMe(c context.Context, userId string, req *userReques
 	if req.Email != "" {
 		user.Email = req.Email
 	}
-	if req.Password != "" {
-		user.Password, err = utils.HashPassword(req.Password)
-		if err != nil {
-			log.Println("Password failed to be encrypted: ", err)
-			return nil, err
-		}
-	}
 
 	if err := s.repository.UpdateUser(c, user); err != nil {
 		log.Println("Failed to update user ", err)
@@ -269,6 +274,33 @@ func (s *UserService) UpdateMe(c context.Context, userId string, req *userReques
 	}
 
 	return user, nil
+}
+
+func (s *UserService) UpdatePassword(c context.Context, userId string, req *userRequest.UpdatePassword) error {
+	user, err := s.repository.GetUserByID(c, userId)
+	if err != nil {
+		log.Println("Failed to get user by id ", err)
+		return fmt.Errorf("user not found: %v", userId)
+	}
+
+	if !auths.ComparePasswords(user.Password, []byte(req.OldPassword)) {
+		return fmt.Errorf("invalid password")
+	}
+
+	hashedPassword, err := auths.HashPassword(req.NewPassword)
+	if err != nil {
+		log.Println("Failed to encrypt password ", err)
+		return err
+	}
+
+	user.Password = hashedPassword
+
+	if err := s.repository.UpdateUser(c, user); err != nil {
+		log.Println("Failed to update user ", err)
+		return fmt.Errorf("failed to update user: %v", err)
+	}
+
+	return nil
 }
 
 func (s *UserService) GetMe(c context.Context, userId string) (*userModel.User, error) {

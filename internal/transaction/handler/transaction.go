@@ -4,7 +4,7 @@ import (
 	"net/http"
 	transactionService "washit-api/internal/transaction/service"
 	"washit-api/pkg/redis"
-	"washit-api/pkg/utils"
+	"washit-api/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,5 +22,5 @@ func NewTransactionHandler(service transactionService.TransactionServiceInterfac
 }
 
 func (h *TransactionHandler) GetTransactions(c *gin.Context) {
-	utils.SuccessResponse(c, http.StatusOK, "Test", nil, nil)
+	response.Success(c, http.StatusOK, "Test", nil, nil)
 }

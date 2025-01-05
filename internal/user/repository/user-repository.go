@@ -7,7 +7,7 @@ import (
 	"washit-api/pkg/db/dbs"
 )
 
-type UserRepositoryInterface interface {
+type IUserRepository interface {
 	CreateUser(ctx context.Context, user *userModel.User) error
 	GetUserByID(ctx context.Context, userId string) (*userModel.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*userModel.User, error)

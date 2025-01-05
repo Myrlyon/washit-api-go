@@ -13,16 +13,17 @@ import (
 	orderService "washit-api/internal/order/service"
 	"washit-api/pkg/configs"
 	"washit-api/pkg/redis"
+	"washit-api/pkg/response"
 	"washit-api/pkg/utils"
 )
 
 type OrderHandler struct {
-	service   orderService.OrderServiceInterface
+	service   orderService.IOrderService
 	cache     redis.RedisInterface
 	validator *validator.Validate
 }
 
-func NewOrderHandler(service orderService.OrderServiceInterface, cache redis.RedisInterface, validator *validator.Validate) *OrderHandler {
+func NewOrderHandler(service orderService.IOrderService, cache redis.RedisInterface, validator *validator.Validate) *OrderHandler {
 	return &OrderHandler{
 		service:   service,
 		cache:     cache,
@@ -46,32 +47,32 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 
 	if err := utils.ParseJson(c, &req); err != nil {
 		log.Println("Failed to parse request body ", err)
-		utils.ErrorResponse(c, http.StatusBadRequest, "failed to parse request body", err)
+		response.Error(c, http.StatusBadRequest, "failed to parse request body", err)
 		return
 	}
 
 	if err := h.validator.Struct(&req); err != nil {
 		log.Println("Failed to validate request body ", err)
-		utils.ErrorResponse(c, http.StatusBadRequest, "failed to validate request body", err)
+		response.Error(c, http.StatusBadRequest, "failed to validate request body", err)
 		return
 	}
 
 	userId, err := strconv.Atoi(c.GetString("userId"))
 	if err != nil {
 		log.Println("Failed to get user id ", err)
-		utils.ErrorResponse(c, http.StatusBadRequest, "failed to get user id", err)
+		response.Error(c, http.StatusBadRequest, "failed to get user id", err)
 		return
 	}
 
 	order, err := h.service.CreateOrder(c, userId, &req)
 	if err != nil {
 		log.Println("Failed to create order ", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create order", err)
+		response.Error(c, http.StatusInternalServerError, "failed to create order", err)
 		return
 	}
 
 	utils.CopyTo(order, &res)
-	utils.SuccessResponse(c, http.StatusCreated, "order is created successfully", &res, links(res.ID))
+	response.Success(c, http.StatusCreated, "order is created successfully", &res, links(res.ID))
 
 	_ = h.cache.Remove(ordersCacheKey)
 }
@@ -90,12 +91,12 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	order, err := h.service.CancelOrder(c, c.Param("id"), c.GetString("userId"))
 	if err != nil {
 		log.Println("Failed to get order ", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get order", err)
+		response.Error(c, http.StatusInternalServerError, "failed to get order", err)
 		return
 	}
 
 	utils.CopyTo(&order, &res)
-	utils.SuccessResponse(c, http.StatusOK, "order is cancelled successfully", &res, links(res.ID))
+	response.Success(c, http.StatusOK, "order is cancelled successfully", &res, links(res.ID))
 
 	_ = h.cache.Remove(ordersCacheKey)
 }
@@ -121,12 +122,12 @@ func (h *OrderHandler) GetOrderById(c *gin.Context) {
 	order, err := h.service.GetOrderById(c, c.Param("id"), userId)
 	if err != nil {
 		log.Println("Failed to get order ", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get order", err)
+		response.Error(c, http.StatusInternalServerError, "failed to get order", err)
 		return
 	}
 
 	utils.CopyTo(&order, &res)
-	utils.SuccessResponse(c, http.StatusOK, "order is collected successfully", &res, links(res.ID))
+	response.Success(c, http.StatusOK, "order is collected successfully", &res, links(res.ID))
 }
 
 // @Summary	Get Orders Me
@@ -141,7 +142,7 @@ func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
 
 	if err := h.cache.Get(ordersCacheKey, &res); err == nil {
 		log.Println("Failed to get orders ", err)
-		utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
+		response.Success(c, http.StatusOK, "orders are collected successfully", &res, nil)
 		return
 	}
 
@@ -149,12 +150,12 @@ func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
 	orders, err := h.service.GetOrdersMe(c, userId)
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
+		response.Error(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
 	utils.CopyTo(&orders, &res)
-	utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
+	response.Success(c, http.StatusOK, "orders are collected successfully", &res, nil)
 
 	_ = h.cache.SetWithExpiration(ordersCacheKey, &res, configs.ProductCachingTime)
 }
@@ -172,19 +173,19 @@ func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
 	err := h.cache.Get(ordersCacheKey, &res)
 	if err == nil {
 		log.Println("Failed to get orders ", err)
-		utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
+		response.Success(c, http.StatusOK, "orders are collected successfully", &res, nil)
 		return
 	}
 
 	orders, err := h.service.GetOrdersAll(c)
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
+		response.Error(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
 	utils.CopyTo(&orders, &res)
-	utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
+	response.Success(c, http.StatusOK, "orders are collected successfully", &res, nil)
 
 	_ = h.cache.SetWithExpiration(ordersCacheKey, &res, configs.ProductCachingTime)
 }
@@ -203,35 +204,35 @@ func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 	orders, err := h.service.GetOrdersByUser(c, c.Param("id"))
 	if err != nil {
 		log.Println("Failed to get orders ", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to get orders", err)
+		response.Error(c, http.StatusInternalServerError, "failed to get orders", err)
 		return
 	}
 
 	utils.CopyTo(&orders, &res)
-	utils.SuccessResponse(c, http.StatusOK, "orders are collected successfully", &res, nil)
+	response.Success(c, http.StatusOK, "orders are collected successfully", &res, nil)
 }
 
 func (h *OrderHandler) UpdateWeight(c *gin.Context) {
 	var res orderResource.Order
 
 	if _, err := strconv.ParseFloat(c.Param("weight"), 64); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "weight must be a number", err)
+		response.Error(c, http.StatusBadRequest, "weight must be a number", err)
 		return
 	}
 
 	order, err := h.service.UpdateWeight(c, c.Param("id"), c.Param("weight"))
 	if err != nil {
 		log.Println("Failed to update weight ", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to update weight", err)
+		response.Error(c, http.StatusInternalServerError, "failed to update weight", err)
 		return
 	}
 
 	utils.CopyTo(&order, &res)
-	utils.SuccessResponse(c, http.StatusOK, "weight is updated successfully", &res, links(res.ID))
+	response.Success(c, http.StatusOK, "weight is updated successfully", &res, links(res.ID))
 }
 
-var links = func(orderId string) map[string]utils.HypermediaLink {
-	return map[string]utils.HypermediaLink{
+var links = func(orderId string) map[string]response.HypermediaLink {
+	return map[string]response.HypermediaLink{
 		"self": {
 			Href:   "/order/" + orderId,
 			Method: "GET",

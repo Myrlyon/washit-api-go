@@ -1,17 +1,36 @@
-package utils
+package generate
 
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"time"
+
+	random "crypto/rand"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/exp/rand"
 )
 
-func DownloadImageFromUrl(imageUrl string) (imagePath string, err error) {
+func RandomPassword() (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+"
+	password := make([]byte, 69)
+	charsetLen := byte(len(charset))
+
+	for i := range password {
+		randomByte, err := random.Int(random.Reader, big.NewInt(int64(charsetLen)))
+		if err != nil {
+			return "", err
+		}
+		password[i] = charset[randomByte.Int64()]
+	}
+
+	return string(password), nil
+}
+
+func ImageFromUrl(imageUrl string) (imagePath string, err error) {
 	sId := time.Now().UnixNano()
 	savePath := fmt.Sprintf("./public/profilePic/%d.jpg", sId)
 

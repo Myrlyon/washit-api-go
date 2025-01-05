@@ -10,7 +10,7 @@ import (
 	"washit-api/pkg/db/dbs"
 )
 
-type OrderRepositoryInterface interface {
+type IOrderRepository interface {
 	GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error)
 	GetOrderById(ctx context.Context, orderId string, userId string) (*orderModel.Order, error)
 	CreateOrder(ctx context.Context, order *orderModel.Order) (*orderModel.Order, error)

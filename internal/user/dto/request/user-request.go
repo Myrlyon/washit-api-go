@@ -14,11 +14,15 @@ type Login struct {
 	FcmToken string `json:"fcmToken"`
 }
 
-type Update struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
+type UpdateProfile struct {
+	FirstName string `json:"firstName" validate:"min=2"`
+	LastName  string `json:"lastName" validate:"min=2"`
 	Email     string `json:"email"`
-	Password  string `json:"password" validate:"min=3,max=130"`
+}
+
+type UpdatePassword struct {
+	OldPassword string `json:"oldPassword" validate:"required"`
+	NewPassword string `json:"newPassword" validate:"required,min=3,max=130"`
 }
 
 type Google struct {
