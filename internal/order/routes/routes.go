@@ -14,8 +14,8 @@ import (
 
 func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface, validator *validator.Validate) {
 	repository := orderRepository.NewOrderRepository(db)
-	service := orderService.NewOrderService(repository)
-	handler := order.NewOrderHandler(service, cache, validator)
+	service := orderService.NewOrderService(repository, validator)
+	handler := order.NewOrderHandler(service, cache)
 
 	authMiddleware := middleware.JWTAuth()
 	adminAuthMiddleware := middleware.JTWAuthAdmin()

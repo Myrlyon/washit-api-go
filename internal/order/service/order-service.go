@@ -13,6 +13,8 @@ import (
 	orderRepository "washit-api/internal/order/repository"
 	generate "washit-api/pkg/generator"
 	"washit-api/pkg/utils"
+
+	"github.com/go-playground/validator"
 )
 
 type IOrderService interface {
@@ -27,18 +29,25 @@ type IOrderService interface {
 
 type OrderService struct {
 	repository orderRepository.IOrderRepository
+	validator  *validator.Validate
 }
 
 func NewOrderService(
-	repository orderRepository.IOrderRepository) *OrderService {
+	repository orderRepository.IOrderRepository, validator *validator.Validate) *OrderService {
 	return &OrderService{
 		repository: repository,
+		validator:  validator,
 	}
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, userId int, req *orderRequest.Order) (*orderModel.Order, error) {
-	order := &orderModel.Order{}
+	if err := s.validator.Struct(&req); err != nil {
+		log.Println("Failed to validate Order request ", err)
+		return nil, err
 
+	}
+
+	order := &orderModel.Order{}
 	ordId, err := generate.AlphaNumericId("ORD")
 	if err != nil {
 		log.Println("Failed to generate Order ID ", err)

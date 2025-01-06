@@ -2,6 +2,7 @@ package response
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -44,7 +45,7 @@ func Success(c *gin.Context, statusCode int, message string, data interface{}, l
 	response := SuccessResponseFormat{
 		Status:     "success",
 		StatusCode: statusCode,
-		Message:    message,
+		Message:    strings.ToLower(message),
 		Data:       data,
 		Meta: MetaInfo{
 			RequestID: c.GetString("requestId"),
@@ -59,7 +60,7 @@ func Error(c *gin.Context, statusCode int, message string, err error) {
 	response := ErrorResponseFormat{
 		Status:     "error",
 		StatusCode: statusCode,
-		Message:    message,
+		Message:    strings.ToLower(message),
 		Error: ErrorInfo{
 			Type:    fmt.Sprintf("%T", err),
 			Details: err.Error(),

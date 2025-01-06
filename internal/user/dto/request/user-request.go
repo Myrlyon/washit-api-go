@@ -1,11 +1,10 @@
 package userRequest
 
 type Register struct {
-	ID        int64  `json:"id"`
 	FirstName string `json:"firstName" validate:"required"`
 	LastName  string `json:"lastName" validate:"required"`
 	Email     string `json:"email" validate:"required,email"`
-	Password  string `json:"password" validate:"required,min=3,max=130"`
+	Password  string `json:"password" validate:"required,min=6,max=130"`
 }
 
 type Login struct {
@@ -21,8 +20,9 @@ type UpdateProfile struct {
 }
 
 type UpdatePassword struct {
-	OldPassword string `json:"oldPassword" validate:"required"`
-	NewPassword string `json:"newPassword" validate:"required,min=3,max=130"`
+	OldPassword     string `json:"oldPassword" validate:"required"`
+	NewPassword     string `json:"newPassword" validate:"required,min=6,max=130"`
+	ConfirmPassword string `json:"confirmPassword" validate:"required,eqfield=NewPassword"`
 }
 
 type Google struct {

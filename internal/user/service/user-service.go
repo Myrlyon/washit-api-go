@@ -17,6 +17,7 @@ import (
 	"firebase.google.com/go/auth"
 	"github.com/fatih/camelcase"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 )
 
 type IUserService interface {
@@ -31,18 +32,20 @@ type IUserService interface {
 	GetUserByID(c context.Context, userId string) (*userModel.User, error)
 	GetUsers(c context.Context) ([]*userModel.User, error)
 	GetBannedUsers(c context.Context) ([]*userModel.User, error)
-	UpdateMe(c context.Context, userId string, req *userRequest.UpdateProfile) (*userModel.User, error)
+	UpdateProfile(c context.Context, userId string, req *userRequest.UpdateProfile) (*userModel.User, error)
 	UpdatePassword(c context.Context, userId string, req *userRequest.UpdatePassword) error
 }
 
 type UserService struct {
 	repository userRepository.IUserRepository
+	validator  *validator.Validate
 }
 
 func NewUserService(
-	repository userRepository.IUserRepository) *UserService {
+	repository userRepository.IUserRepository, validator *validator.Validate) *UserService {
 	return &UserService{
 		repository: repository,
+		validator:  validator,
 	}
 }
 
@@ -80,13 +83,13 @@ func (s *UserService) LoginWithGoogle(c context.Context, req *userRequest.Google
 			return nil, nil, nil, err
 		}
 
-		SplittedName := camelcase.Split(userInfo.DisplayName)
-
 		imagePath, err := generate.ImageFromUrl(userInfo.PhotoURL)
 		if err != nil {
 			log.Println("Error downloading Google profile image: ", err)
 			return nil, nil, nil, err
 		}
+
+		SplittedName := camelcase.Split(userInfo.DisplayName)
 
 		users := &userModel.User{
 			ID:        sId,
@@ -120,9 +123,14 @@ func (s *UserService) LoginWithGoogle(c context.Context, req *userRequest.Google
 		}
 	}
 
+	if user.IsBanned {
+		return nil, nil, nil, fmt.Errorf("user is banned")
+	}
+
 	tokenData := gin.H{
-		"id":   strconv.FormatInt(user.ID, 10),
-		"role": user.Role,
+		"id":        strconv.FormatInt(user.ID, 10),
+		"role":      user.Role,
+		"fcm_token": req.FcmToken,
 	}
 
 	accessToken := jwt.GenerateAccessToken(tokenData)
@@ -132,6 +140,11 @@ func (s *UserService) LoginWithGoogle(c context.Context, req *userRequest.Google
 }
 
 func (s *UserService) Login(c context.Context, req *userRequest.Login) (*userModel.User, any, any, error) {
+	if err := s.validator.Struct(req); err != nil {
+		log.Println("Failed to validate login request ", err)
+		return nil, nil, nil, err
+	}
+
 	user, err := s.repository.GetUserByEmail(c, req.Email)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("unable to find user with email: %s", req.Email)
@@ -154,8 +167,9 @@ func (s *UserService) Login(c context.Context, req *userRequest.Login) (*userMod
 	}
 
 	tokenData := gin.H{
-		"id":   strconv.FormatInt(user.ID, 10),
-		"role": user.Role,
+		"id":        strconv.FormatInt(user.ID, 10),
+		"role":      user.Role,
+		"fcm_token": req.FcmToken,
 	}
 
 	accessToken := jwt.GenerateAccessToken(tokenData)
@@ -165,6 +179,11 @@ func (s *UserService) Login(c context.Context, req *userRequest.Login) (*userMod
 }
 
 func (s *UserService) Register(c context.Context, req *userRequest.Register) (*userModel.User, error) {
+	if err := s.validator.Struct(req); err != nil {
+		log.Println("Failed to validate register request ", err)
+		return nil, err
+	}
+
 	user := &userModel.User{}
 
 	_, err := s.repository.GetUserByEmail(c, req.Email)
@@ -172,15 +191,15 @@ func (s *UserService) Register(c context.Context, req *userRequest.Register) (*u
 		return nil, fmt.Errorf("user with email %s already exists", req.Email)
 	}
 
-	hashedPassword, err := auths.HashPassword(req.Password)
-	if err != nil {
-		log.Println("Password failed to be encrypted: ", err)
-		return nil, err
-	}
-
 	sId, err := generate.SnowflakeId(1)
 	if err != nil {
 		log.Println("Failed to generate snowflake id ", err)
+		return nil, err
+	}
+
+	hashedPassword, err := auths.HashPassword(req.Password)
+	if err != nil {
+		log.Println("Password failed to be encrypted: ", err)
 		return nil, err
 	}
 
@@ -251,7 +270,12 @@ func (s *UserService) UnbanUser(c context.Context, userId string) (*userModel.Us
 	return user, nil
 }
 
-func (s *UserService) UpdateMe(c context.Context, userId string, req *userRequest.UpdateProfile) (*userModel.User, error) {
+func (s *UserService) UpdateProfile(c context.Context, userId string, req *userRequest.UpdateProfile) (*userModel.User, error) {
+	if err := s.validator.Struct(req); err != nil {
+		log.Println("Failed to validate update profile request ", err)
+		return nil, err
+	}
+
 	user, err := s.repository.GetUserByID(c, userId)
 	if err != nil {
 		log.Println("Failed to get user by id ", err)
@@ -272,11 +296,15 @@ func (s *UserService) UpdateMe(c context.Context, userId string, req *userReques
 		log.Println("Failed to update user ", err)
 		return nil, fmt.Errorf("failed to update user: %v", err)
 	}
-
 	return user, nil
 }
 
 func (s *UserService) UpdatePassword(c context.Context, userId string, req *userRequest.UpdatePassword) error {
+	if err := s.validator.Struct(req); err != nil {
+		log.Println("Failed to validate update password request ", err)
+		return err
+	}
+
 	user, err := s.repository.GetUserByID(c, userId)
 	if err != nil {
 		log.Println("Failed to get user by id ", err)

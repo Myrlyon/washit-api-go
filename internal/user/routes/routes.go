@@ -15,8 +15,8 @@ import (
 
 func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface, app *firebase.App, validator *validator.Validate) {
 	repository := userRepository.NewUserRepository(db)
-	service := userService.NewUserService(repository)
-	handler := user.NewUserHandler(service, cache, app, validator)
+	service := userService.NewUserService(repository, validator)
+	handler := user.NewUserHandler(service, cache, app)
 
 	authMiddleware := middleware.JWTAuth()
 	adminAuthMiddleware := middleware.JTWAuthAdmin()

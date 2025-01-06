@@ -56,8 +56,8 @@ func main() {
 		log.Fatalf("error initializing app: %v", err)
 	}
 
-	validate := validator.New()
-	server := api.NewServer(validate, db, cache, app)
+	validator := validator.New()
+	server := api.NewServer(validator, db, cache, app)
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
 	}

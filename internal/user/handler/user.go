@@ -9,7 +9,6 @@ import (
 
 	fireBase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator"
 
 	userRequest "washit-api/internal/user/dto/request"
 	userResource "washit-api/internal/user/dto/resource"
@@ -22,18 +21,16 @@ import (
 )
 
 type UserHandler struct {
-	service   userService.IUserService
-	cache     redis.RedisInterface
-	app       *fireBase.App
-	validator *validator.Validate
+	service userService.IUserService
+	cache   redis.RedisInterface
+	app     *fireBase.App
 }
 
-func NewUserHandler(service userService.IUserService, cache redis.RedisInterface, app *fireBase.App, validator *validator.Validate) *UserHandler {
+func NewUserHandler(service userService.IUserService, cache redis.RedisInterface, app *fireBase.App) *UserHandler {
 	return &UserHandler{
-		service:   service,
-		cache:     cache,
-		app:       app,
-		validator: validator,
+		service: service,
+		cache:   cache,
+		app:     app,
 	}
 }
 
@@ -125,12 +122,6 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if err := h.validator.Struct(&req); err != nil {
-		log.Println("Failed to validate request ", err)
-		response.Error(c, http.StatusBadRequest, "Failed to validate request", err)
-		return
-	}
-
 	user, accessToken, refreshToken, err := h.service.Login(c, &req)
 	if err != nil {
 		log.Println("Failed to login as user ", err)
@@ -167,12 +158,6 @@ func (h *UserHandler) Register(c *gin.Context) {
 	if err := utils.ParseJson(c, &req); err != nil {
 		log.Println("Failed to parse request ", err)
 		response.Error(c, http.StatusBadRequest, "Failed to parse request", err)
-		return
-	}
-
-	if err := h.validator.Struct(&req); err != nil {
-		log.Println("Failed to validate request ", err)
-		response.Error(c, http.StatusBadRequest, "Failed to validate request", err)
 		return
 	}
 
@@ -261,14 +246,8 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	if err := h.validator.Struct(&req); err != nil {
-		log.Println("Failed to validate request ", err)
-		response.Error(c, http.StatusBadRequest, "Failed to validate request", err)
-		return
-	}
-
 	userID := c.GetString("userId")
-	user, err := h.service.UpdateMe(c, userID, &req)
+	user, err := h.service.UpdateProfile(c, userID, &req)
 	if err != nil {
 		log.Println("Failed to update user ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to update user", err)
@@ -290,18 +269,11 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 // @Success	201	{object}	userResource.User
 // @Router		/profile/update/password [put]
 func (h *UserHandler) UpdatePassword(c *gin.Context) {
-	var res userResource.User
 	var req userRequest.UpdatePassword
 
 	if err := utils.ParseJson(c, &req); err != nil {
 		log.Println("Failed to parse request ", err)
 		response.Error(c, http.StatusBadRequest, "Failed to parse request", err)
-		return
-	}
-
-	if err := h.validator.Struct(&req); err != nil {
-		log.Println("Failed to validate request ", err)
-		response.Error(c, http.StatusBadRequest, "Failed to validate request", err)
 		return
 	}
 
@@ -312,7 +284,7 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, http.StatusOK, "Successfully updated password", nil, links(res.ID))
+	response.Success(c, http.StatusOK, "Successfully updated password", nil, nil)
 }
 
 // @Summary	Get the current logged-in user

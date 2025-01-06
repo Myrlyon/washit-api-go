@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator"
 
 	orderRequest "washit-api/internal/order/dto/request"
 	orderResource "washit-api/internal/order/dto/resource"
@@ -18,16 +17,14 @@ import (
 )
 
 type OrderHandler struct {
-	service   orderService.IOrderService
-	cache     redis.RedisInterface
-	validator *validator.Validate
+	service orderService.IOrderService
+	cache   redis.RedisInterface
 }
 
-func NewOrderHandler(service orderService.IOrderService, cache redis.RedisInterface, validator *validator.Validate) *OrderHandler {
+func NewOrderHandler(service orderService.IOrderService, cache redis.RedisInterface) *OrderHandler {
 	return &OrderHandler{
-		service:   service,
-		cache:     cache,
-		validator: validator,
+		service: service,
+		cache:   cache,
 	}
 }
 
@@ -48,12 +45,6 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	if err := utils.ParseJson(c, &req); err != nil {
 		log.Println("Failed to parse request body ", err)
 		response.Error(c, http.StatusBadRequest, "failed to parse request body", err)
-		return
-	}
-
-	if err := h.validator.Struct(&req); err != nil {
-		log.Println("Failed to validate request body ", err)
-		response.Error(c, http.StatusBadRequest, "failed to validate request body", err)
 		return
 	}
 

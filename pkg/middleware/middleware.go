@@ -43,11 +43,10 @@ func JWT(tokenType string, role string) gin.HandlerFunc {
 			return
 		}
 
-		requestID := uuid.New().String()
-
-		c.Set("requestId", requestID)
+		c.Set("requestId", uuid.New().String())
 		c.Set("userId", payload["id"])
 		c.Set("userRole", payload["role"])
+		c.Set("fcmToken", payload["fcm_token"])
 		c.Next()
 	}
 }
