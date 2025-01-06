@@ -5,15 +5,19 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	historyModel "washit-api/internal/history/dto/model"
 	orderModel "washit-api/internal/order/dto/model"
 	orderRequest "washit-api/internal/order/dto/request"
 	orderRepository "washit-api/internal/order/repository"
+	generate "washit-api/pkg/generator"
 	"washit-api/pkg/utils"
+
+	"github.com/go-playground/validator"
 )
 
-type OrderServiceInterface interface {
+type IOrderService interface {
 	GetOrdersMe(ctx context.Context, userId string) ([]*orderModel.Order, error)
 	GetOrdersAll(ctx context.Context) ([]*orderModel.Order, error)
 	GetOrderById(ctx context.Context, orderId string, userId string) (*orderModel.Order, error)
@@ -24,20 +28,27 @@ type OrderServiceInterface interface {
 }
 
 type OrderService struct {
-	repository orderRepository.OrderRepositoryInterface
+	repository orderRepository.IOrderRepository
+	validator  *validator.Validate
 }
 
 func NewOrderService(
-	repository orderRepository.OrderRepositoryInterface) *OrderService {
+	repository orderRepository.IOrderRepository, validator *validator.Validate) *OrderService {
 	return &OrderService{
 		repository: repository,
+		validator:  validator,
 	}
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, userId int, req *orderRequest.Order) (*orderModel.Order, error) {
-	order := &orderModel.Order{}
+	if err := s.validator.Struct(&req); err != nil {
+		log.Println("Failed to validate Order request ", err)
+		return nil, err
 
-	ordId, err := utils.AlphaNumericId("ORD")
+	}
+
+	order := &orderModel.Order{}
+	ordId, err := generate.AlphaNumericId("ORD")
 	if err != nil {
 		log.Println("Failed to generate Order ID ", err)
 		return nil, err
@@ -130,6 +141,7 @@ func (s *OrderService) CancelOrder(ctx context.Context, orderId string, userId s
 
 	utils.CopyTo(&order, &history)
 	history.Reason = "cancelled"
+	history.DeletedAt = time.Now()
 
 	if err := s.repository.CreateHistory(ctx, &history); err != nil {
 		log.Println("Failed to move order to history", err)

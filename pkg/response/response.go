@@ -1,8 +1,8 @@
-package utils
+package response
 
 import (
-	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,11 +41,11 @@ type MetaInfo struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-func SuccessResponse(c *gin.Context, statusCode int, message string, data interface{}, links map[string]HypermediaLink) {
+func Success(c *gin.Context, statusCode int, message string, data interface{}, links map[string]HypermediaLink) {
 	response := SuccessResponseFormat{
 		Status:     "success",
 		StatusCode: statusCode,
-		Message:    message,
+		Message:    strings.ToLower(message),
 		Data:       data,
 		Meta: MetaInfo{
 			RequestID: c.GetString("requestId"),
@@ -56,11 +56,11 @@ func SuccessResponse(c *gin.Context, statusCode int, message string, data interf
 	c.JSON(statusCode, response)
 }
 
-func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
+func Error(c *gin.Context, statusCode int, message string, err error) {
 	response := ErrorResponseFormat{
 		Status:     "error",
 		StatusCode: statusCode,
-		Message:    message,
+		Message:    strings.ToLower(message),
 		Error: ErrorInfo{
 			Type:    fmt.Sprintf("%T", err),
 			Details: err.Error(),
@@ -71,24 +71,4 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 		},
 	}
 	c.JSON(statusCode, response)
-}
-
-func ParseJson(c *gin.Context, v any) error {
-	if c.Request.Body == nil {
-		return fmt.Errorf("missing request body")
-	}
-	return json.NewDecoder(c.Request.Body).Decode(v)
-}
-
-func CopyTo(src interface{}, dest interface{}) {
-	data, _ := json.Marshal(src)
-	_ = json.Unmarshal(data, dest)
-}
-
-func ToData(title string, ConvertedData any) (responseData any) {
-	responseData = map[string]interface{}{
-		"message": title + " is collected successfully",
-		title:     ConvertedData,
-	}
-	return
 }

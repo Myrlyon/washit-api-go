@@ -15,8 +15,8 @@ import (
 
 func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface, app *firebase.App, validator *validator.Validate) {
 	repository := userRepository.NewUserRepository(db)
-	service := userService.NewUserService(repository)
-	handler := user.NewUserHandler(service, cache, app, validator)
+	service := userService.NewUserService(repository, validator)
+	handler := user.NewUserHandler(service, cache, app)
 
 	authMiddleware := middleware.JWTAuth()
 	adminAuthMiddleware := middleware.JTWAuthAdmin()
@@ -36,6 +36,7 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterfa
 
 	// Profile Put
 	r.PUT("/profile/update", authMiddleware, handler.UpdateMe)
+	r.PUT("/profile/update/password", authMiddleware, handler.UpdatePassword)
 	// r.PUT("/profile/picture", authMiddleware, handler.UpdatePicture)
 
 	// Admin Authority
