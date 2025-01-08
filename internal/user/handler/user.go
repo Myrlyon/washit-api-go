@@ -22,11 +22,11 @@ import (
 
 type UserHandler struct {
 	service userService.IUserService
-	cache   redis.RedisInterface
+	cache   redis.IRedis
 	app     *fireBase.App
 }
 
-func NewUserHandler(service userService.IUserService, cache redis.RedisInterface, app *fireBase.App) *UserHandler {
+func NewUserHandler(service userService.IUserService, cache redis.IRedis, app *fireBase.App) *UserHandler {
 	return &UserHandler{
 		service: service,
 		cache:   cache,
@@ -285,6 +285,25 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "Successfully updated password", nil, nil)
+}
+
+func (h *UserHandler) UpdatePicture(c *gin.Context) {
+	var req userRequest.UpdatePicture
+
+	if err := utils.ParseJson(c, &req); err != nil {
+		log.Println("Failed to parse request ", err)
+		response.Error(c, http.StatusBadRequest, "Failed to parse request", err)
+		return
+	}
+
+	userID := c.GetString("userId")
+	user, err := h.service.UpdatePicture(c, userID, &req)
+	if err != nil {
+		log.Println("Failed to update profile picture. err: ", err)
+		response.Error(c, http.StatusInternalServerError, "Failed to update profile picture", err)
+	}
+
+	response.Success(c, http.StatusOK, "Succesfully updated profile picture", user, nil)
 }
 
 // @Summary	Get the current logged-in user
