@@ -6,31 +6,26 @@ definitions:
         type: integer
       collectDate:
         type: string
-      estimateDate:
-        type: string
-      id:
-        type: string
       note:
         type: string
       orderType:
         type: string
-      price:
-        type: number
       serviceType:
         type: string
-      status:
-        type: string
-      transactionId:
-        type: integer
     required:
     - addressId
     - collectDate
-    - estimateDate
     - orderType
-    - price
     - serviceType
     type: object
-  orderResource.Base:
+  orderRequest.Payment:
+    properties:
+      transactionId:
+        type: string
+    required:
+    - transactionId
+    type: object
+  orderResource.Order:
     properties:
       addressId:
         type: integer
@@ -53,44 +48,30 @@ definitions:
       status:
         type: string
       transactionId:
-        type: integer
+        type: string
       updatedAt:
         type: string
-      userId:
+      user:
+        allOf:
+        - $ref: '#/definitions/orderResource.User'
+        description: UserID        int              `json:"userId" gorm:"not null;index"`
+      weight:
+        type: number
+    type: object
+  orderResource.User:
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
         type: integer
-    type: object
-  orderResource.Hypermedia:
-    properties:
-      cancel:
-        additionalProperties:
-          type: string
-        type: object
-      create:
-        additionalProperties:
-          type: string
-        type: object
-      self:
-        additionalProperties:
-          type: string
-        type: object
-    type: object
-  orderResource.Order:
-    properties:
-      _links:
-        $ref: '#/definitions/orderResource.Hypermedia'
-      message:
+      image:
         type: string
-      order:
-        $ref: '#/definitions/orderResource.Base'
-    type: object
-  orderResource.OrderList:
-    properties:
-      message:
+      lastName:
         type: string
-      orders:
-        items:
-          $ref: '#/definitions/orderResource.Base'
-        type: array
+      role:
+        type: string
     type: object
   userRequest.Google:
     properties:
@@ -117,13 +98,11 @@ definitions:
         type: string
       firstName:
         type: string
-      id:
-        type: integer
       lastName:
         type: string
       password:
         maxLength: 130
-        minLength: 3
+        minLength: 6
         type: string
     required:
     - email
@@ -131,20 +110,42 @@ definitions:
     - lastName
     - password
     type: object
-  userRequest.Update:
+  userRequest.UpdatePassword:
+    properties:
+      confirmPassword:
+        type: string
+      newPassword:
+        maxLength: 130
+        minLength: 6
+        type: string
+      oldPassword:
+        type: string
+    required:
+    - confirmPassword
+    - newPassword
+    - oldPassword
+    type: object
+  userRequest.UpdatePicture:
+    properties:
+      Image:
+        items:
+          type: integer
+        type: array
+    required:
+    - Image
+    type: object
+  userRequest.UpdateProfile:
     properties:
       email:
         type: string
       firstName:
+        minLength: 2
         type: string
       lastName:
-        type: string
-      password:
-        maxLength: 130
-        minLength: 3
+        minLength: 2
         type: string
     type: object
-  userResource.Base:
+  userResource.User:
     properties:
       createdAt:
         type: string
@@ -161,14 +162,14 @@ definitions:
       role:
         type: string
     type: object
-  userResource.User:
+  userResource.WithToken:
     properties:
       accessToken:
         type: string
       refreshToken:
         type: string
       user:
-        $ref: '#/definitions/userResource.Base'
+        $ref: '#/definitions/userResource.User'
     type: object
 host: localhost:8080
 info:
@@ -200,7 +201,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.User'
+            $ref: '#/definitions/userResource.WithToken'
       summary: Login as a user
       tags:
       - User
@@ -221,8 +222,40 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.User'
+            $ref: '#/definitions/userResource.WithToken'
       summary: Login with Google
+      tags:
+      - User
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userResource.User'
+      security:
+      - ApiKeyAuth: []
+      summary: Logout the current logged-in user
+      tags:
+      - User
+  /auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: accessToken
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh the user's access token
       tags:
       - User
   /auth/register:
@@ -251,7 +284,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Body
+      - description: Order details
         in: body
         name: _
         required: true
@@ -266,7 +299,7 @@ paths:
             $ref: '#/definitions/orderResource.Order'
       security:
       - ApiKeyAuth: []
-      summary: Create Order
+      summary: Create a new order
       tags:
       - Order
   /order/{id}:
@@ -288,7 +321,56 @@ paths:
             $ref: '#/definitions/orderResource.Order'
       security:
       - ApiKeyAuth: []
-      summary: Get Order By ID
+      summary: Get order details by ID
+      tags:
+      - Order
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Order details
+        in: body
+        name: _
+        required: true
+        schema:
+          $ref: '#/definitions/orderRequest.Order'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Edit an existing order
+      tags:
+      - Order
+  /order/{id}/accept:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Accept an order
       tags:
       - Order
   /order/{id}/cancel:
@@ -310,7 +392,106 @@ paths:
             $ref: '#/definitions/orderResource.Order'
       security:
       - ApiKeyAuth: []
-      summary: Cancel Order
+      summary: Cancel an existing order
+      tags:
+      - Order
+  /order/{id}/complete:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Complete an order
+      tags:
+      - Order
+  /order/{id}/pay:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payment details
+        in: body
+        name: _
+        required: true
+        schema:
+          $ref: '#/definitions/orderRequest.Payment'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Pay for an order
+      tags:
+      - Order
+  /order/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Reject an order
+      tags:
+      - Order
+  /order/{id}/weight/{weight}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Weight
+        in: path
+        name: weight
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/orderResource.Order'
+      security:
+      - ApiKeyAuth: []
+      summary: Update the weight of an order
       tags:
       - Order
   /orders:
@@ -323,10 +504,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/orderResource.OrderList'
+            $ref: '#/definitions/orderResource.Order'
       security:
       - ApiKeyAuth: []
-      summary: Get Orders Me
+      summary: Get all orders for the authenticated user
       tags:
       - Order
   /orders/all:
@@ -339,10 +520,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/orderResource.OrderList'
+            $ref: '#/definitions/orderResource.Order'
       security:
       - ApiKeyAuth: []
-      summary: Get Orders All
+      summary: Get all orders
       tags:
       - Order
   /orders/user/{id}:
@@ -361,10 +542,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/orderResource.OrderList'
+            $ref: '#/definitions/orderResource.Order'
       security:
       - ApiKeyAuth: []
-      summary: Get Orders By User
+      summary: Get all orders for a specific user
       tags:
       - Order
   /profile/me:
@@ -393,7 +574,7 @@ paths:
         name: _
         required: true
         schema:
-          $ref: '#/definitions/userRequest.Update'
+          $ref: '#/definitions/userRequest.UpdateProfile'
       produces:
       - application/json
       responses:
@@ -404,6 +585,52 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update the current logged-in user
+      tags:
+      - User
+  /profile/update/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Body
+        in: body
+        name: _
+        required: true
+        schema:
+          $ref: '#/definitions/userRequest.UpdatePassword'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/userResource.User'
+      security:
+      - ApiKeyAuth: []
+      summary: Update the current logged-in user's password
+      tags:
+      - User
+  /profile/update/picture:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Body
+        in: body
+        name: _
+        required: true
+        schema:
+          $ref: '#/definitions/userRequest.UpdatePicture'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userResource.User'
+      security:
+      - ApiKeyAuth: []
+      summary: Update the current logged-in user's profile picture
       tags:
       - User
   /user/{id}:
@@ -422,10 +649,54 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.Base'
+            $ref: '#/definitions/userResource.User'
       security:
       - ApiKeyAuth: []
       summary: Get a user by ID
+      tags:
+      - User
+  /user/{id}/ban:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userResource.User'
+      security:
+      - ApiKeyAuth: []
+      summary: Ban a user
+      tags:
+      - User
+  /user/{id}/unban:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userResource.User'
+      security:
+      - ApiKeyAuth: []
+      summary: Unban a user
       tags:
       - User
   /users:
@@ -438,10 +709,26 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/userResource.Base'
+            $ref: '#/definitions/userResource.User'
       security:
       - ApiKeyAuth: []
       summary: Get all users
+      tags:
+      - User
+  /users/banned:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/userResource.User'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all banned users
       tags:
       - User
 securityDefinitions:

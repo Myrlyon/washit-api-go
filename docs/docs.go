@@ -50,7 +50,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/userResource.User"
+                            "$ref": "#/definitions/userResource.WithToken"
                         }
                     }
                 }
@@ -83,7 +83,59 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
+                            "$ref": "#/definitions/userResource.WithToken"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Logout the current logged-in user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
                             "$ref": "#/definitions/userResource.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh-token": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Refresh the user's access token",
+                "responses": {
+                    "200": {
+                        "description": "accessToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -138,10 +190,10 @@ const docTemplate = `{
                 "tags": [
                     "Order"
                 ],
-                "summary": "Create Order",
+                "summary": "Create a new order",
                 "parameters": [
                     {
-                        "description": "Body",
+                        "description": "Order details",
                         "name": "_",
                         "in": "body",
                         "required": true,
@@ -176,7 +228,86 @@ const docTemplate = `{
                 "tags": [
                     "Order"
                 ],
-                "summary": "Get Order By ID",
+                "summary": "Get order details by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orderResource.Order"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Edit an existing order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Order details",
+                        "name": "_",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/orderRequest.Order"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orderResource.Order"
+                        }
+                    }
+                }
+            }
+        },
+        "/order/{id}/accept": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Accept an order",
                 "parameters": [
                     {
                         "type": "string",
@@ -212,12 +343,172 @@ const docTemplate = `{
                 "tags": [
                     "Order"
                 ],
-                "summary": "Cancel Order",
+                "summary": "Cancel an existing order",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Order ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orderResource.Order"
+                        }
+                    }
+                }
+            }
+        },
+        "/order/{id}/complete": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Complete an order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orderResource.Order"
+                        }
+                    }
+                }
+            }
+        },
+        "/order/{id}/pay": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Pay for an order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payment details",
+                        "name": "_",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/orderRequest.Payment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orderResource.Order"
+                        }
+                    }
+                }
+            }
+        },
+        "/order/{id}/reject": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Reject an order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orderResource.Order"
+                        }
+                    }
+                }
+            }
+        },
+        "/order/{id}/weight/{weight}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Update the weight of an order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Weight",
+                        "name": "weight",
                         "in": "path",
                         "required": true
                     }
@@ -248,12 +539,12 @@ const docTemplate = `{
                 "tags": [
                     "Order"
                 ],
-                "summary": "Get Orders Me",
+                "summary": "Get all orders for the authenticated user",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/orderResource.OrderList"
+                            "$ref": "#/definitions/orderResource.Order"
                         }
                     }
                 }
@@ -275,12 +566,12 @@ const docTemplate = `{
                 "tags": [
                     "Order"
                 ],
-                "summary": "Get Orders All",
+                "summary": "Get all orders",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/orderResource.OrderList"
+                            "$ref": "#/definitions/orderResource.Order"
                         }
                     }
                 }
@@ -302,7 +593,7 @@ const docTemplate = `{
                 "tags": [
                     "Order"
                 ],
-                "summary": "Get Orders By User",
+                "summary": "Get all orders for a specific user",
                 "parameters": [
                     {
                         "type": "string",
@@ -316,7 +607,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/orderResource.OrderList"
+                            "$ref": "#/definitions/orderResource.Order"
                         }
                     }
                 }
@@ -373,13 +664,89 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/userRequest.Update"
+                            "$ref": "#/definitions/userRequest.UpdateProfile"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
                         "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/userResource.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/profile/update/password": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update the current logged-in user's password",
+                "parameters": [
+                    {
+                        "description": "Body",
+                        "name": "_",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/userRequest.UpdatePassword"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/userResource.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/profile/update/picture": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update the current logged-in user's profile picture",
+                "parameters": [
+                    {
+                        "description": "Body",
+                        "name": "_",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/userRequest.UpdatePicture"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/userResource.User"
                         }
@@ -417,7 +784,79 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/userResource.Base"
+                            "$ref": "#/definitions/userResource.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/ban": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Ban a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/userResource.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/unban": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Unban a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/userResource.User"
                         }
                     }
                 }
@@ -444,7 +883,34 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/userResource.Base"
+                            "$ref": "#/definitions/userResource.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/banned": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get all banned users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/userResource.User"
                         }
                     }
                 }
@@ -457,9 +923,7 @@ const docTemplate = `{
             "required": [
                 "addressId",
                 "collectDate",
-                "estimateDate",
                 "orderType",
-                "price",
                 "serviceType"
             ],
             "properties": {
@@ -469,33 +933,29 @@ const docTemplate = `{
                 "collectDate": {
                     "type": "string"
                 },
-                "estimateDate": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
                 "note": {
                     "type": "string"
                 },
                 "orderType": {
                     "type": "string"
                 },
-                "price": {
-                    "type": "number"
-                },
                 "serviceType": {
                     "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "transactionId": {
-                    "type": "integer"
                 }
             }
         },
-        "orderResource.Base": {
+        "orderRequest.Payment": {
+            "type": "object",
+            "required": [
+                "transactionId"
+            ],
+            "properties": {
+                "transactionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "orderResource.Order": {
             "type": "object",
             "properties": {
                 "addressId": {
@@ -529,64 +989,44 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "transactionId": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
                 },
-                "userId": {
+                "user": {
+                    "description": "UserID        int              ` + "`" + `json:\"userId\" gorm:\"not null;index\"` + "`" + `",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/orderResource.User"
+                        }
+                    ]
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "orderResource.User": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "integer"
-                }
-            }
-        },
-        "orderResource.Hypermedia": {
-            "type": "object",
-            "properties": {
-                "cancel": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
                 },
-                "create": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "self": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "orderResource.Order": {
-            "type": "object",
-            "properties": {
-                "_links": {
-                    "$ref": "#/definitions/orderResource.Hypermedia"
-                },
-                "message": {
+                "image": {
                     "type": "string"
                 },
-                "order": {
-                    "$ref": "#/definitions/orderResource.Base"
-                }
-            }
-        },
-        "orderResource.OrderList": {
-            "type": "object",
-            "properties": {
-                "message": {
+                "lastName": {
                     "type": "string"
                 },
-                "orders": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/orderResource.Base"
-                    }
+                "role": {
+                    "type": "string"
                 }
             }
         },
@@ -634,39 +1074,68 @@ const docTemplate = `{
                 "firstName": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "integer"
-                },
                 "lastName": {
                     "type": "string"
                 },
                 "password": {
                     "type": "string",
                     "maxLength": 130,
-                    "minLength": 3
+                    "minLength": 6
                 }
             }
         },
-        "userRequest.Update": {
+        "userRequest.UpdatePassword": {
+            "type": "object",
+            "required": [
+                "confirmPassword",
+                "newPassword",
+                "oldPassword"
+            ],
+            "properties": {
+                "confirmPassword": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "type": "string",
+                    "maxLength": 130,
+                    "minLength": 6
+                },
+                "oldPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "userRequest.UpdatePicture": {
+            "type": "object",
+            "required": [
+                "Image"
+            ],
+            "properties": {
+                "Image": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "userRequest.UpdateProfile": {
             "type": "object",
             "properties": {
                 "email": {
                     "type": "string"
                 },
                 "firstName": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 2
                 },
                 "lastName": {
-                    "type": "string"
-                },
-                "password": {
                     "type": "string",
-                    "maxLength": 130,
-                    "minLength": 3
+                    "minLength": 2
                 }
             }
         },
-        "userResource.Base": {
+        "userResource.User": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -692,7 +1161,7 @@ const docTemplate = `{
                 }
             }
         },
-        "userResource.User": {
+        "userResource.WithToken": {
             "type": "object",
             "properties": {
                 "accessToken": {
@@ -702,7 +1171,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/userResource.Base"
+                    "$ref": "#/definitions/userResource.User"
                 }
             }
         }

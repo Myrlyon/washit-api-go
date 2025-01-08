@@ -36,6 +36,14 @@ func NewUserHandler(service userService.IUserService, cache redis.IRedis, app *f
 
 var MeCacheKey = "/api/v1/profile/me"
 
+// RefreshToken refreshes the user's access token
+//
+//	@Summary	Refresh the user's access token
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Success	200	{object}	map[string]string	"accessToken"
+//	@Router		/auth/refresh-token [post]
 func (h *UserHandler) RefreshToken(c *gin.Context) {
 	userID := c.GetString("userId")
 	if userID == "" {
@@ -54,13 +62,15 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully refreshed token", gin.H{"accessToken": accessToken}, nil)
 }
 
-// @Summary	Login with Google
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Param		_	body		userRequest.Google	true	"Body"
-// @Success	200	{object}	userResource.User
-// @Router		/auth/login/google [post]
+// LoginWithGoogle handles user login via Google
+//
+//	@Summary	Login with Google
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		_	body		userRequest.Google	true	"Body"
+//	@Success	200	{object}	userResource.WithToken
+//	@Router		/auth/login/google [post]
 func (h *UserHandler) LoginWithGoogle(c *gin.Context) {
 	var res userResource.WithToken
 	var req userRequest.Google
@@ -105,13 +115,15 @@ func (h *UserHandler) LoginWithGoogle(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully logged in with Google", &res, nil)
 }
 
-// @Summary	Login as a user
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Param		_	body		userRequest.Login	true	"Body"
-// @Success	200	{object}	userResource.User
-// @Router		/auth/login [post]
+// Login handles user login
+//
+//	@Summary	Login as a user
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		_	body		userRequest.Login	true	"Body"
+//	@Success	200	{object}	userResource.WithToken
+//	@Router		/auth/login [post]
 func (h *UserHandler) Login(c *gin.Context) {
 	var req userRequest.Login
 	var res userResource.WithToken
@@ -144,13 +156,15 @@ func (h *UserHandler) Login(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully logged in", &res, nil)
 }
 
-// @Summary	Register a new user
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Param		_	body		userRequest.Register	true	"Body"
-// @Success	201	{object}	userResource.User
-// @Router		/auth/register [post]
+// Register handles user registration
+//
+//	@Summary	Register a new user
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Param		_	body		userRequest.Register	true	"Body"
+//	@Success	201	{object}	userResource.User
+//	@Router		/auth/register [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req userRequest.Register
 	var res userResource.User
@@ -172,26 +186,30 @@ func (h *UserHandler) Register(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "Successfully registered", &res, nil)
 }
 
-// @Summary	Logout the current logged-in user
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Success	200	{object}	userResource.User
-// @Router		/auth/logout [post]
+// Logout handles user logout
+//
+//	@Summary	Logout the current logged-in user
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Success	200	{object}	userResource.User
+//	@Router		/auth/logout [post]
 func (h *UserHandler) Logout(c *gin.Context) {
 	c.SetCookie("jwt", "", -1, "/", "localhost", false, true)
 	response.Success(c, http.StatusOK, "Successfully logged out", nil, nil)
 }
 
-// @Summary	Ban a user
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		id	path		string	true	"User ID"
-// @Success	200	{object}	userResource.User
-// @Router		/user/{id}/ban [put]
+// BanUser bans a user by ID
+//
+//	@Summary	Ban a user
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"User ID"
+//	@Success	200	{object}	userResource.User
+//	@Router		/user/{id}/ban [put]
 func (h *UserHandler) BanUser(c *gin.Context) {
 	var res userResource.User
 
@@ -206,14 +224,16 @@ func (h *UserHandler) BanUser(c *gin.Context) {
 	response.Success(c, http.StatusOK, user.FirstName+" is successfully banned", &res, links(res.ID))
 }
 
-// @Summary	Unban a user
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		id	path		string	true	"User ID"
-// @Success	200	{object}	userResource.User
-// @Router		/user/{id}/unban [put]
+// UnbanUser unbans a user by ID
+//
+//	@Summary	Unban a user
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"User ID"
+//	@Success	200	{object}	userResource.User
+//	@Router		/user/{id}/unban [put]
 func (h *UserHandler) UnbanUser(c *gin.Context) {
 	var res userResource.User
 
@@ -228,14 +248,16 @@ func (h *UserHandler) UnbanUser(c *gin.Context) {
 	response.Success(c, http.StatusOK, user.FirstName+" is successfully unbanned", &res, links(res.ID))
 }
 
-// @Summary	Update the current logged-in user
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		_	body		userRequest.UpdateProfile	true	"Body"
-// @Success	201	{object}	userResource.User
-// @Router		/profile/update [put]
+// UpdateMe updates the current logged-in user's profile
+//
+//	@Summary	Update the current logged-in user
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		_	body		userRequest.UpdateProfile	true	"Body"
+//	@Success	201	{object}	userResource.User
+//	@Router		/profile/update [put]
 func (h *UserHandler) UpdateMe(c *gin.Context) {
 	var req userRequest.UpdateProfile
 	var res userResource.User
@@ -260,14 +282,16 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully updated", &res, links(res.ID))
 }
 
-// @Summary	Update the current logged-in user's password
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		_	body		userRequest.UpdatePassword	true	"Body"
-// @Success	201	{object}	userResource.User
-// @Router		/profile/update/password [put]
+// UpdatePassword updates the current logged-in user's password
+//
+//	@Summary	Update the current logged-in user's password
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		_	body		userRequest.UpdatePassword	true	"Body"
+//	@Success	201	{object}	userResource.User
+//	@Router		/profile/update/password [put]
 func (h *UserHandler) UpdatePassword(c *gin.Context) {
 	var req userRequest.UpdatePassword
 
@@ -287,6 +311,16 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully updated password", nil, nil)
 }
 
+// UpdatePicture updates the current logged-in user's profile picture
+//
+//	@Summary	Update the current logged-in user's profile picture
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		_	body		userRequest.UpdatePicture	true	"Body"
+//	@Success	200	{object}	userResource.User
+//	@Router		/profile/update/picture [put]
 func (h *UserHandler) UpdatePicture(c *gin.Context) {
 	var req userRequest.UpdatePicture
 
@@ -303,16 +337,18 @@ func (h *UserHandler) UpdatePicture(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "Failed to update profile picture", err)
 	}
 
-	response.Success(c, http.StatusOK, "Succesfully updated profile picture", user, nil)
+	response.Success(c, http.StatusOK, "Successfully updated profile picture", user, nil)
 }
 
-// @Summary	Get the current logged-in user
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Success	200	{object}	userResource.User
-// @Router		/profile/me [get]
+// GetMe retrieves the current logged-in user's profile
+//
+//	@Summary	Get the current logged-in user
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Success	200	{object}	userResource.User
+//	@Router		/profile/me [get]
 func (h *UserHandler) GetMe(c *gin.Context) {
 	var res userResource.User
 
@@ -335,13 +371,15 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	_ = h.cache.SetWithExpiration(MeCacheKey, &res, configs.ProductCachingTime)
 }
 
-// @Summary	Get all users
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Success	200	{object}	userResource.UserList
-// @Router		/users [get]
+// GetUsers retrieves all users
+//
+//	@Summary	Get all users
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Success	200	{object}	userResource.User
+//	@Router		/users [get]
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	var res []userResource.User
 
@@ -356,13 +394,15 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully retrieved users", &res, nil)
 }
 
-// @Summary	Get all banned users
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Success	200	{object}	userResource.UserList
-// @Router		/users/banned [get]
+// GetBannedUsers retrieves all banned users
+//
+//	@Summary	Get all banned users
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Success	200	{object}	userResource.User
+//	@Router		/users/banned [get]
 func (h *UserHandler) GetBannedUsers(c *gin.Context) {
 	var res []userResource.User
 
@@ -377,14 +417,16 @@ func (h *UserHandler) GetBannedUsers(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully retrieved banned users", res, nil)
 }
 
-// @Summary	Get a user by ID
-// @Tags		User
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		id	path		string	true	"User ID"
-// @Success	200	{object}	userResource.User
-// @Router		/user/{id} [get]
+// GetUserById retrieves a user by ID
+//
+//	@Summary	Get a user by ID
+//	@Tags		User
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"User ID"
+//	@Success	200	{object}	userResource.User
+//	@Router		/user/{id} [get]
 func (h *UserHandler) GetUserById(c *gin.Context) {
 	var res userResource.User
 

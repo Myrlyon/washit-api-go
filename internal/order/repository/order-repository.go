@@ -9,8 +9,9 @@ import (
 )
 
 type IOrderRepository interface {
-	GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error)
-	GetOrderById(ctx context.Context, orderId string) (*orderModel.Order, error)
+	GetAllOrders(ctx context.Context) ([]*orderModel.Order, error)
+	GetOrdersByUser(ctx context.Context, userID string) ([]*orderModel.Order, error)
+	GetOrderById(ctx context.Context, orderID string) (*orderModel.Order, error)
 	CreateOrder(ctx context.Context, order *orderModel.Order) (*orderModel.Order, error)
 	CreateHistory(ctx context.Context, history *historyModel.History) error
 	DeleteOrder(ctx context.Context, order *orderModel.Order) error
@@ -33,16 +34,12 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *orderModel.Ord
 	return order, nil
 }
 
-func (r *OrderRepository) GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error) {
+func (r *OrderRepository) GetAllOrders(ctx context.Context) ([]*orderModel.Order, error) {
 	var orders []*orderModel.Order
 	query := []dbs.FindOption{
 		dbs.WithLimit(10),
 		dbs.WithOrder("created_at DESC"),
 		dbs.WithPreload([]string{"User"}),
-	}
-
-	if userId != "" {
-		query = append(query, dbs.WithQuery(dbs.NewQuery("user_id = ?", userId)))
 	}
 
 	if err := r.db.Find(ctx, &orders, query...); err != nil {
@@ -52,9 +49,28 @@ func (r *OrderRepository) GetOrders(ctx context.Context, userId string) ([]*orde
 	return orders, nil
 }
 
-func (r *OrderRepository) GetOrderById(ctx context.Context, orderId string) (*orderModel.Order, error) {
+func (r *OrderRepository) GetOrdersByUser(ctx context.Context, userID string) ([]*orderModel.Order, error) {
+	var orders []*orderModel.Order
+	query := []dbs.FindOption{
+		dbs.WithLimit(10),
+		dbs.WithOrder("created_at DESC"),
+		dbs.WithPreload([]string{"User"}),
+	}
+
+	if userID != "" {
+		query = append(query, dbs.WithQuery(dbs.NewQuery("user_id = ?", userID)))
+	}
+
+	if err := r.db.Find(ctx, &orders, query...); err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+func (r *OrderRepository) GetOrderById(ctx context.Context, orderID string) (*orderModel.Order, error) {
 	var order orderModel.Order
-	if err := r.db.FindById(ctx, orderId, &order); err != nil {
+	if err := r.db.FindById(ctx, orderID, &order); err != nil {
 		return nil, err
 	}
 

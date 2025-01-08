@@ -47,70 +47,70 @@ func NewOrderService(
 
 func (s *OrderService) CreateOrder(c context.Context, userId int, req *orderRequest.Order) (*orderModel.Order, error) {
 	if err := s.validator.Struct(req); err != nil {
-		log.Println("Failed to validate Order request ", err)
+		log.Printf("Failed to validate Order request: %v", err)
 		return nil, err
 	}
 
 	order := &orderModel.Order{}
 	ordId, err := generate.AlphaNumericId("ORD")
 	if err != nil {
-		log.Println("Failed to generate Order ID ", err)
+		log.Printf("Failed to generate Order ID: %v", err)
 		return nil, err
 	}
 
-	utils.CopyTo(&req, &order)
+	utils.CopyTo(req, order)
 	order.ID = ordId
 	order.UserID = userId
 	order.Status = "created"
 
-	order, err = s.repository.CreateOrder(c, order)
+	createdOrder, err := s.repository.CreateOrder(c, order)
 	if err != nil {
-		log.Println("Failed to create Order ", err)
-		return nil, fmt.Errorf("failed to create order")
+		log.Printf("Failed to create Order: %v", err)
+		return nil, fmt.Errorf("failed to create order: %w", err)
 	}
 
-	return order, nil
+	return createdOrder, nil
 }
 
 func (s *OrderService) GetOrdersMe(c context.Context, userId string) ([]*orderModel.Order, error) {
-	order, err := s.repository.GetOrders(c, userId)
+	orders, err := s.repository.GetOrdersByUser(c, userId)
 	if err != nil {
-		log.Println("Failed to get Orders me")
-		return nil, fmt.Errorf("failed to get orders me")
+		log.Printf("Failed to get orders for user %s: %v", userId, err)
+		return nil, fmt.Errorf("failed to get orders for user %s: %w", userId, err)
 	}
 
-	return order, nil
+	return orders, nil
 }
 
 func (s *OrderService) GetOrdersAll(c context.Context) ([]*orderModel.Order, error) {
-	order, err := s.repository.GetOrders(c, "")
+	orders, err := s.repository.GetAllOrders(c)
 	if err != nil {
-		log.Println("Failed to get all Orders ", err)
-		return nil, fmt.Errorf("failed to get all orders")
+		log.Printf("Failed to get all Orders: %v", err)
+		return nil, fmt.Errorf("failed to get all orders: %w", err)
 	}
 
-	return order, nil
+	return orders, nil
 }
 
 func (s *OrderService) GetOrdersByUser(c context.Context, userId string) ([]*orderModel.Order, error) {
-	order, err := s.repository.GetOrders(c, userId)
+	orders, err := s.repository.GetOrdersByUser(c, userId)
 	if err != nil {
-		log.Println("Failed to get Orders from userID ", err)
-		return nil, fmt.Errorf("failed to get orders from userid: %v", userId)
+		log.Printf("Failed to get Orders from userID: %v", err)
+		return nil, fmt.Errorf("failed to get orders from userID: %v", userId)
 	}
 
-	return order, nil
+	return orders, nil
 }
 
 func (s *OrderService) GetOrderById(c context.Context, orderId string, userId string) (*orderModel.Order, error) {
 	order, err := s.repository.GetOrderById(c, orderId)
 	if err != nil {
-		log.Println("Failed to get Order by id", err)
+		log.Printf("Failed to get Order by id: %v", err)
 		return nil, fmt.Errorf("failed to get order by id: %v", err)
 	}
 
 	if strconv.Itoa(order.UserID) != userId {
-		log.Println("User ID mismatch")
+		log.Printf("User ID mismatch: expected %v, got %v", userId, order.UserID)
 		return nil, fmt.Errorf("user ID mismatch: %v", userId)
 	}
 
@@ -120,20 +120,20 @@ func (s *OrderService) GetOrderById(c context.Context, orderId string, userId st
 func (s *OrderService) UpdateWeight(c context.Context, orderId string, weight string) (*orderModel.Order, error) {
 	order, err := s.repository.GetOrderById(c, orderId)
 	if err != nil {
-		log.Println("Failed to get Order by id", err)
+		log.Printf("Failed to get Order by id: %v", err)
 		return nil, fmt.Errorf("failed to get order by id: %v", err)
 	}
 
 	weightFloat, err := strconv.ParseFloat(weight, 64)
 	if err != nil {
-		log.Println("Failed to parse weight", err)
+		log.Printf("Failed to parse weight: %v", err)
 		return nil, fmt.Errorf("failed to parse weight: %v", weight)
 	}
 
 	order.Weight = &weightFloat
 
 	if err := s.repository.UpdateOrder(c, order); err != nil {
-		log.Println("Failed to update order weight by ID:", err)
+		log.Printf("Failed to update order weight by ID: %v", err)
 		return nil, fmt.Errorf("failed to update order weight by ID: %v", orderId)
 	}
 
@@ -143,8 +143,8 @@ func (s *OrderService) UpdateWeight(c context.Context, orderId string, weight st
 func (s *OrderService) AcceptOrder(c context.Context, orderId string) (*orderModel.Order, error) {
 	order, err := s.repository.GetOrderById(c, orderId)
 	if err != nil {
-		log.Println("Failed to get Order by id", err)
-		return nil, fmt.Errorf("failed to get order by id: %v", err)
+		log.Printf("Failed to get Order by id: %v", err)
+		return nil, fmt.Errorf("failed to get order by id: %w", err)
 	}
 
 	if order.Status != "created" {
@@ -155,8 +155,8 @@ func (s *OrderService) AcceptOrder(c context.Context, orderId string) (*orderMod
 	order.Status = "accepted"
 
 	if err := s.repository.UpdateOrder(c, order); err != nil {
-		log.Println("Failed to update status")
-		return nil, fmt.Errorf("failed to update status: %v", err)
+		log.Printf("Failed to update order status to 'accepted' for order ID %s: %v", orderId, err)
+		return nil, fmt.Errorf("failed to update order status: %w", err)
 	}
 
 	return order, nil
@@ -167,30 +167,36 @@ func (s *OrderService) CompleteOrder(c context.Context, orderId string, userId s
 
 	order, err := s.repository.GetOrderById(c, orderId)
 	if err != nil {
-		log.Panicln("Failed to get Order by id", err)
-		return nil, fmt.Errorf("failed to get order by id: %v", err)
+		log.Printf("Failed to get Order by id: %v", err)
+		return nil, fmt.Errorf("failed to get order by id: %w", err)
 	}
 
 	if strconv.Itoa(order.UserID) != userId {
-		log.Println("User ID mismatch")
+		log.Printf("User ID mismatch: expected %v, got %v", userId, order.UserID)
 		return nil, fmt.Errorf("user ID mismatch: %v", userId)
 	}
 
-	if order.Status != "created" {
-		log.Printf("Order is already in a non-acceptable status: %v", order.Status)
-		return nil, fmt.Errorf("order is already in a non-acceptable status: %v", order.Status)
+	if order.Status != "delivered" {
+		log.Printf("Order cannot be completed due to its current status: %v", order.Status)
+		return nil, fmt.Errorf("order cannot be completed due to its current status: %v", order.Status)
+	}
+
+	if order.TransactionID == "" {
+		log.Printf("Order cannot be completed due to missing transaction ID")
+		return nil, fmt.Errorf("order cannot be completed due to missing transaction ID")
 	}
 
 	utils.CopyTo(&order, &history)
 	history.Status = "completed"
+	history.DeletedAt = time.Now()
 
 	if err := s.repository.CreateHistory(c, &history); err != nil {
-		log.Println("Failed to move order to history", err)
+		log.Printf("Failed to move order to history: %v", err)
 		return nil, fmt.Errorf("failed to move order to history: %v", err)
 	}
 
 	if err := s.repository.DeleteOrder(c, order); err != nil {
-		log.Println("Failed to delete order by ID:", err)
+		log.Printf("Failed to delete order by ID %s: %v", orderId, err)
 		return nil, fmt.Errorf("failed to delete order by ID: %v", orderId)
 	}
 
@@ -199,20 +205,25 @@ func (s *OrderService) CompleteOrder(c context.Context, orderId string, userId s
 
 func (s *OrderService) PayOrder(c context.Context, orderId string, req *orderRequest.Payment) (*orderModel.Order, error) {
 	if err := s.validator.Struct(req); err != nil {
-		log.Println("Failed to validate Order request ", err)
-		return nil, err
+		log.Printf("Failed to validate Order request: %v", err)
+		return nil, fmt.Errorf("validation error: %w", err)
 	}
 
 	order, err := s.repository.GetOrderById(c, orderId)
 	if err != nil {
-		log.Println("Failed to get Order by id", err)
-		return nil, fmt.Errorf("failed to get order by id: %v", err)
+		log.Printf("Failed to get Order by id: %v", err)
+		return nil, fmt.Errorf("failed to get order by id: %w", err)
+	}
+
+	if order.Price == nil {
+		log.Printf("Payment is not allowed, invalid price: %v", order.Price)
+		return nil, fmt.Errorf("payment is not allowed, invalid price: %v", order.Price)
 	}
 
 	order.TransactionID = req.TransactionID
 
 	if err := s.repository.UpdateOrder(c, order); err != nil {
-		log.Println("Failed to update transaction Id ", err)
+		log.Printf("Failed to update transaction ID: %v", err)
 		return nil, fmt.Errorf("failed to update transaction by id: %v", err)
 	}
 
@@ -224,13 +235,13 @@ func (s *OrderService) RejectOrder(c context.Context, orderId string) (*orderMod
 
 	order, err := s.repository.GetOrderById(c, orderId)
 	if err != nil {
-		log.Println("Failed to get Order by id", err)
-		return nil, fmt.Errorf("failed to get order by id: %v", err)
+		log.Printf("Failed to get Order by id: %v", err)
+		return nil, fmt.Errorf("failed to get order by id: %w", err)
 	}
 
 	if order.Status != "created" {
-		log.Println("Rejecting is forbidden")
-		return nil, fmt.Errorf("Rejecting is forbidden in status: %v", order.Status)
+		log.Printf("Order cannot be rejected in its current status: %v", order.Status)
+		return nil, fmt.Errorf("order cannot be rejected in its current status: %v", order.Status)
 	}
 
 	utils.CopyTo(&order, &history)
@@ -238,13 +249,13 @@ func (s *OrderService) RejectOrder(c context.Context, orderId string) (*orderMod
 	history.DeletedAt = time.Now()
 
 	if err := s.repository.CreateHistory(c, &history); err != nil {
-		log.Println("Failed to move order to history", err)
-		return nil, fmt.Errorf("failed to move order to history: %v", err)
+		log.Printf("Failed to move order to history: %v", err)
+		return nil, fmt.Errorf("failed to move order to history: %w", err)
 	}
 
 	if err := s.repository.DeleteOrder(c, order); err != nil {
-		log.Println("Failed to delete order by ID:", err)
-		return nil, fmt.Errorf("failed to delete order by ID: %v", orderId)
+		log.Printf("Failed to delete order by ID %s: %v", orderId, err)
+		return nil, fmt.Errorf("failed to delete order by ID %s: %w", orderId, err)
 	}
 
 	return order, nil
@@ -255,18 +266,18 @@ func (s *OrderService) CancelOrder(c context.Context, orderId string, userId str
 
 	order, err := s.repository.GetOrderById(c, orderId)
 	if err != nil {
-		log.Println("Failed to get Order by id", err)
-		return nil, fmt.Errorf("failed to get order by id: %v", err)
+		log.Printf("Failed to get Order by id: %v", err)
+		return nil, fmt.Errorf("failed to get order by id: %w", err)
 	}
 
 	if strconv.Itoa(order.UserID) != userId {
-		log.Println("User ID mismatch")
+		log.Printf("User ID mismatch")
 		return nil, fmt.Errorf("user ID mismatch: %v", userId)
 	}
 
 	if order.Status != "created" {
-		log.Println("Cancelling is forbidden")
-		return nil, fmt.Errorf("Cancelling is forbidden in status: %v", order.Status)
+		log.Printf("Order cannot be cancelled in its current status: %v", order.Status)
+		return nil, fmt.Errorf("order cannot be cancelled in its current status: %v", order.Status)
 	}
 
 	utils.CopyTo(&order, &history)
@@ -274,13 +285,13 @@ func (s *OrderService) CancelOrder(c context.Context, orderId string, userId str
 	history.DeletedAt = time.Now()
 
 	if err := s.repository.CreateHistory(c, &history); err != nil {
-		log.Println("Failed to move order to history", err)
-		return nil, fmt.Errorf("failed to move order to history: %v", err)
+		log.Printf("Failed to move order to history: %v", err)
+		return nil, fmt.Errorf("failed to move order to history: %w", err)
 	}
 
 	if err := s.repository.DeleteOrder(c, order); err != nil {
-		log.Println("Failed to delete order by ID:", err)
-		return nil, fmt.Errorf("failed to delete order by ID: %v", orderId)
+		log.Printf("Failed to delete order by ID %s: %v", orderId, err)
+		return nil, fmt.Errorf("failed to delete order by ID %s: %w", orderId, err)
 	}
 
 	return order, nil
@@ -288,31 +299,31 @@ func (s *OrderService) CancelOrder(c context.Context, orderId string, userId str
 
 func (s *OrderService) EditOrder(c context.Context, orderId string, userId string, req *orderRequest.Order) (*orderModel.Order, error) {
 	if err := s.validator.Struct(req); err != nil {
-		log.Println("Failed to validate update profile request ", err)
-		return nil, err
+		log.Printf("Validation failed for update profile request: %v", err)
+		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
 	order, err := s.repository.GetOrderById(c, orderId)
 	if err != nil {
-		log.Println("Failed to get Order by id", err)
+		log.Printf("Failed to get Order by id: %v", err)
 		return nil, fmt.Errorf("failed to get order by id: %v", err)
 	}
 
 	if strconv.Itoa(order.UserID) != userId {
-		log.Println("User ID mismatch")
+		log.Printf("User ID mismatch")
 		return nil, fmt.Errorf("user ID mismatch: %v", userId)
 	}
 
 	if order.Status != "created" {
-		log.Println("Editing is forbidden")
-		return nil, fmt.Errorf("Editing is forbidden in status: %v", order.Status)
+		log.Printf("Editing is not allowed for orders with status: %v", order.Status)
+		return nil, fmt.Errorf("editing is not allowed for orders with status: %v", order.Status)
 	}
 
 	utils.CopyTo(&req, order)
 
 	if err := s.repository.UpdateOrder(c, order); err != nil {
-		log.Println("Failed to update order by id ", err)
-		return nil, fmt.Errorf("failed to update order by id: %v", orderId)
+		log.Printf("Failed to update order with ID %s: %v", orderId, err)
+		return nil, fmt.Errorf("failed to update order with ID %s: %w", orderId, err)
 	}
 
 	return order, nil
