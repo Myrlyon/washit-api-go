@@ -7,8 +7,9 @@ import (
 )
 
 type Order struct {
-	ID            string           `json:"id" gorm:"primaryKey"`
-	UserID        int              `json:"userId" gorm:"not null;index"`
+	ID string `json:"id" gorm:"primaryKey"`
+	// UserID        int              `json:"userId" gorm:"not null;index"`
+	User          User             `json:"user" gorm:"foreignKey:UserID;references:ID"`
 	TransactionID string           `json:"transactionId"`
 	AddressID     int              `json:"addressId"`
 	Status        string           `json:"status"`
@@ -21,4 +22,14 @@ type Order struct {
 	EstimateDate  time.Time        `json:"estimateDate"`
 	CreatedAt     time.Time        `json:"createdAt"`
 	UpdatedAt     time.Time        `json:"updatedAt"`
+}
+
+type User struct {
+	ID        int64  `json:"id"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	Image     string `json:"image"`
+	// CreatedAt time.Time `json:"createdAt"`
 }

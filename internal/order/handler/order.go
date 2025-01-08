@@ -18,10 +18,10 @@ import (
 
 type OrderHandler struct {
 	service orderService.IOrderService
-	cache   redis.RedisInterface
+	cache   redis.IRedis
 }
 
-func NewOrderHandler(service orderService.IOrderService, cache redis.RedisInterface) *OrderHandler {
+func NewOrderHandler(service orderService.IOrderService, cache redis.IRedis) *OrderHandler {
 	return &OrderHandler{
 		service: service,
 		cache:   cache,
@@ -203,6 +203,69 @@ func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 	response.Success(c, http.StatusOK, "orders are collected successfully", &res, nil)
 }
 
+func (h *OrderHandler) EditOrder(c *gin.Context) {
+	var req orderRequest.Order
+	var res orderResource.Order
+
+	if err := utils.ParseJson(c, &req); err != nil {
+		log.Println("Failed to parse request ", err)
+		response.Error(c, http.StatusBadRequest, "Failed to parse request", err)
+		return
+	}
+
+	order, err := h.service.EditOrder(c, c.Param("id"), c.GetString("userId"), &req)
+	if err != nil {
+		log.Println("Failed to update order ", err)
+		response.Error(c, http.StatusInternalServerError, "failed to update order", err)
+		return
+	}
+
+	utils.CopyTo(&order, &res)
+	response.Success(c, http.StatusOK, "order is updated succesfully", &res, links(res.ID))
+
+	_ = h.cache.SetWithExpiration(ordersCacheKey, &res, configs.ProductCachingTime)
+}
+
+func (h *OrderHandler) AcceptOrder(c *gin.Context) {
+	var res orderResource.Order
+
+	order, err := h.service.AcceptOrder(c, c.Param("id"))
+	if err != nil {
+		log.Println("Failed to accept order ", err)
+		response.Error(c, http.StatusInternalServerError, "failed to accept order", err)
+	}
+
+	utils.CopyTo(&order, &res)
+	response.Success(c, http.StatusOK, "order is accepted succesfully", &res, links(res.ID))
+}
+
+func (h *OrderHandler) CompleteOrder(c *gin.Context) {
+	var res orderResource.Order
+
+	order, err := h.service.CompleteOrder(c, c.Param("id"), c.GetString("userId"))
+	if err != nil {
+		log.Println("Failed to complete order ", err)
+		response.Error(c, http.StatusInternalServerError, "failed to complete order", err)
+	}
+
+	utils.CopyTo(&order, &res)
+	response.Success(c, http.StatusOK, "order is completed succesfully", &res, links(res.ID))
+}
+
+func (h *OrderHandler) RejectOrder(c *gin.Context) {
+	var res orderResource.Order
+
+	order, err := h.service.RejectOrder(c, c.Param("id"))
+	if err != nil {
+		log.Println("Failed to reject order ", err)
+		response.Error(c, http.StatusInternalServerError, "failed to reject order", err)
+		return
+	}
+
+	utils.CopyTo(&order, &res)
+	response.Success(c, http.StatusOK, "order is rejected succesfully", &res, links(res.ID))
+}
+
 func (h *OrderHandler) UpdateWeight(c *gin.Context) {
 	var res orderResource.Order
 
@@ -220,6 +283,20 @@ func (h *OrderHandler) UpdateWeight(c *gin.Context) {
 
 	utils.CopyTo(&order, &res)
 	response.Success(c, http.StatusOK, "weight is updated successfully", &res, links(res.ID))
+}
+
+func (h *OrderHandler) PayOrder(c *gin.Context) {
+	var res orderResource.Order
+	var req orderRequest.Payment
+
+	order, err := h.service.PayOrder(c, c.Param("id"), &req)
+	if err != nil {
+		log.Println("Failed to pay order ", err)
+		response.Error(c, http.StatusInternalServerError, "failed to pay order", err)
+	}
+
+	utils.CopyTo(&order, &res)
+	response.Success(c, http.StatusOK, "order is paid succesfully", &res, links(res.ID))
 }
 
 var links = func(orderId string) map[string]response.HypermediaLink {

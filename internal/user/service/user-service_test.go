@@ -215,8 +215,9 @@ func (suite *UserServiceTestSuite) TestUpdateProfileUpdateUserFail() {
 
 func (suite *UserServiceTestSuite) TestUpdatePasswordSuccess() {
 	req := &userRequest.UpdatePassword{
-		OldPassword: "test123456",
-		NewPassword: "test1234567",
+		OldPassword:     "test123456",
+		NewPassword:     "test1234567",
+		ConfirmPassword: "test1234567",
 	}
 
 	hashedPassword, err := auths.HashPassword("test123456")
@@ -234,8 +235,9 @@ func (suite *UserServiceTestSuite) TestUpdatePasswordSuccess() {
 
 func (suite *UserServiceTestSuite) TestUpdatePasswordMinPasswordLength() {
 	req := &userRequest.UpdatePassword{
-		OldPassword: "test123456",
-		NewPassword: "test",
+		OldPassword:     "test123456",
+		NewPassword:     "test",
+		ConfirmPassword: "test",
 	}
 
 	hashedPassword, err := auths.HashPassword("test123456")
@@ -253,8 +255,9 @@ func (suite *UserServiceTestSuite) TestUpdatePasswordMinPasswordLength() {
 
 func (suite *UserServiceTestSuite) TestUpdatePasswordGetUserByIDFail() {
 	req := &userRequest.UpdatePassword{
-		OldPassword: "test123456",
-		NewPassword: "test1234567",
+		OldPassword:     "test123456",
+		NewPassword:     "test1234567",
+		ConfirmPassword: "test1234567",
 	}
 
 	suite.mockRepo.On("GetUserByID", mock.Anything, mock.Anything).
@@ -266,8 +269,9 @@ func (suite *UserServiceTestSuite) TestUpdatePasswordGetUserByIDFail() {
 
 func (suite *UserServiceTestSuite) TestUpdatePasswordWrongOldPassword() {
 	req := &userRequest.UpdatePassword{
-		OldPassword: "test123456",
-		NewPassword: "test1234567",
+		OldPassword:     "test123456",
+		NewPassword:     "test1234567",
+		ConfirmPassword: "test1234567",
 	}
 
 	hashedPassword, err := auths.HashPassword("oldpassword")

@@ -83,3 +83,17 @@ func AlphaNumericId(prefix string) (id string, err error) {
 
 	return prefix + "-" + string(result), nil
 }
+
+func SaveMediaToFile(imageData []byte, savePath string) error {
+	err := os.MkdirAll("media/pelaporan", os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	err = os.WriteFile(savePath, imageData, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to save profile picture: %v", err)
+	}
+
+	return nil
+}

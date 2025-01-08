@@ -22,14 +22,14 @@ import (
 
 type Server struct {
 	addr      string
-	db        dbs.DatabaseInterface
-	cache     redis.RedisInterface
+	db        dbs.IDatabase
+	cache     redis.IRedis
 	engine    *gin.Engine
 	validator *validator.Validate
 	app       *firebase.App
 }
 
-func NewServer(validator *validator.Validate, db dbs.DatabaseInterface, cache redis.RedisInterface, app *firebase.App) *Server {
+func NewServer(validator *validator.Validate, db dbs.IDatabase, cache redis.IRedis, app *firebase.App) *Server {
 	return &Server{
 		addr:      configs.Envs.Port,
 		db:        db,

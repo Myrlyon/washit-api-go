@@ -13,7 +13,7 @@ type Order struct {
 	UserID        int              `json:"userId" gorm:"not null;index"`
 	TransactionID string           `json:"transactionId"`
 	AddressID     int              `json:"addressId"`
-	Status        string           `json:"status"`
+	Status        string           `json:"status" gorm:"default:created"`
 	Note          string           `json:"note"`
 	ServiceType   string           `json:"serviceType"`
 	OrderType     string           `json:"orderType" gorm:"default:regular"`

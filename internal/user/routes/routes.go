@@ -13,7 +13,7 @@ import (
 	"washit-api/pkg/redis"
 )
 
-func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface, app *firebase.App, validator *validator.Validate) {
+func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis, app *firebase.App, validator *validator.Validate) {
 	repository := userRepository.NewUserRepository(db)
 	service := userService.NewUserService(repository, validator)
 	handler := user.NewUserHandler(service, cache, app)
@@ -37,7 +37,7 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterfa
 	// Profile Put
 	r.PUT("/profile/update", authMiddleware, handler.UpdateMe)
 	r.PUT("/profile/update/password", authMiddleware, handler.UpdatePassword)
-	// r.PUT("/profile/picture", authMiddleware, handler.UpdatePicture)
+	r.PUT("/profile/update/picture", authMiddleware, handler.UpdatePicture)
 
 	// Admin Authority
 

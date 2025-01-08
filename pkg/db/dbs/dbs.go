@@ -12,7 +12,7 @@ import (
 const DatabaseTimeout = 5 * time.Second
 
 //go:generate mockery --name=IDatabase
-type DatabaseInterface interface {
+type IDatabase interface {
 	GetDB() *gorm.DB
 	AutoMigrate(models ...any) error
 	WithTransaction(function func() error) error
@@ -93,7 +93,7 @@ func (d *Database) WithTransaction(function func() error) error {
 	return nil
 }
 
-func (d *Database) Preload(query string, args ...interface{}) DatabaseInterface {
+func (d *Database) Preload(query string, args ...interface{}) IDatabase {
 	d.db.Preload(query, args...)
 	return d
 }

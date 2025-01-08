@@ -2,8 +2,6 @@ package orderRepository
 
 import (
 	"context"
-	"errors"
-	"strconv"
 
 	historyModel "washit-api/internal/history/dto/model"
 	orderModel "washit-api/internal/order/dto/model"
@@ -12,7 +10,7 @@ import (
 
 type IOrderRepository interface {
 	GetOrders(ctx context.Context, userId string) ([]*orderModel.Order, error)
-	GetOrderById(ctx context.Context, orderId string, userId string) (*orderModel.Order, error)
+	GetOrderById(ctx context.Context, orderId string) (*orderModel.Order, error)
 	CreateOrder(ctx context.Context, order *orderModel.Order) (*orderModel.Order, error)
 	CreateHistory(ctx context.Context, history *historyModel.History) error
 	DeleteOrder(ctx context.Context, order *orderModel.Order) error
@@ -20,10 +18,10 @@ type IOrderRepository interface {
 }
 
 type OrderRepository struct {
-	db dbs.DatabaseInterface
+	db dbs.IDatabase
 }
 
-func NewOrderRepository(db dbs.DatabaseInterface) *OrderRepository {
+func NewOrderRepository(db dbs.IDatabase) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
@@ -54,15 +52,10 @@ func (r *OrderRepository) GetOrders(ctx context.Context, userId string) ([]*orde
 	return orders, nil
 }
 
-func (r *OrderRepository) GetOrderById(ctx context.Context, orderId string, userId string) (*orderModel.Order, error) {
+func (r *OrderRepository) GetOrderById(ctx context.Context, orderId string) (*orderModel.Order, error) {
 	var order orderModel.Order
-
 	if err := r.db.FindById(ctx, orderId, &order); err != nil {
 		return nil, err
-	}
-
-	if userId != "0" && strconv.Itoa(order.UserID) != userId {
-		return nil, errors.New("unauthorized")
 	}
 
 	return &order, nil
