@@ -10,7 +10,7 @@ import (
 )
 
 type IHistoryService interface {
-	GetHistoriesMe(c *gin.Context, userId string) (*[]historyModel.History, error)
+	GetHistoriesMe(c *gin.Context, userId string) ([]*historyModel.History, error)
 }
 
 type HistoryService struct {
@@ -23,7 +23,7 @@ func NewHistoryService(repository historyRepository.HistoryRepositoryInterface) 
 	}
 }
 
-func (s *HistoryService) GetHistoriesMe(c *gin.Context, userId string) (*[]historyModel.History, error) {
+func (s *HistoryService) GetHistoriesMe(c *gin.Context, userId string) ([]*historyModel.History, error) {
 	histories, err := s.repository.GetHistoriesByUserId(c, userId)
 	if err != nil {
 		log.Println("Failed to get histories by user id ", err)

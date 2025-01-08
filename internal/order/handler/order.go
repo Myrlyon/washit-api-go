@@ -30,14 +30,16 @@ func NewOrderHandler(service orderService.IOrderService, cache redis.IRedis) *Or
 
 var ordersCacheKey string = "/api/v1/orders"
 
-// @Summary	Create Order
-// @Tags		Order
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		_	body		orderRequest.Order	true	"Body"
-// @Success	201	{object}	orderResource.Order
-// @Router		/order [post]
+// CreateOrder handles the creation of a new order.
+//
+//	@Summary	Create a new order
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		_	body		orderRequest.Order	true	"Order details"
+//	@Success	201	{object}	orderResource.Order
+//	@Router		/order [post]
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	var req orderRequest.Order
 	var res orderResource.Order
@@ -68,14 +70,16 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	_ = h.cache.Remove(ordersCacheKey)
 }
 
-// @Summary	Cancel Order
-// @Tags		Order
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		id	path		string	true	"Order ID"
-// @Success	200	{object}	orderResource.Order
-// @Router		/order/{id}/cancel [put]
+// CancelOrder handles the cancellation of an existing order.
+//
+//	@Summary	Cancel an existing order
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"Order ID"
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/order/{id}/cancel [put]
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	var res orderResource.Order
 
@@ -92,14 +96,16 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	_ = h.cache.Remove(ordersCacheKey)
 }
 
-// @Summary	Get Order By ID
-// @Tags		Order
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		id	path		string	true	"Order ID"
-// @Success	200	{object}	orderResource.Order
-// @Router		/order/{id} [get]
+// GetOrderById retrieves an order by its ID.
+//
+//	@Summary	Get order details by ID
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"Order ID"
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/order/{id} [get]
 func (h *OrderHandler) GetOrderById(c *gin.Context) {
 	var res orderResource.Order
 	var userId string
@@ -121,13 +127,15 @@ func (h *OrderHandler) GetOrderById(c *gin.Context) {
 	response.Success(c, http.StatusOK, "order is collected successfully", &res, links(res.ID))
 }
 
-// @Summary	Get Orders Me
-// @Tags		Order
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Success	200	{object}	orderResource.OrderList
-// @Router		/orders [get]
+// GetOrdersMe retrieves all orders for the authenticated user.
+//
+//	@Summary	Get all orders for the authenticated user
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/orders [get]
 func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
 	var res []orderResource.Order
 
@@ -151,13 +159,15 @@ func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
 	_ = h.cache.SetWithExpiration(ordersCacheKey, &res, configs.ProductCachingTime)
 }
 
-// @Summary	Get Orders All
-// @Tags		Order
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Success	200	{object}	orderResource.OrderList
-// @Router		/orders/all [get]
+// GetOrdersAll retrieves all orders.
+//
+//	@Summary	Get all orders
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/orders/all [get]
 func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
 	var res []orderResource.Order
 
@@ -181,14 +191,16 @@ func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
 	_ = h.cache.SetWithExpiration(ordersCacheKey, &res, configs.ProductCachingTime)
 }
 
-// @Summary	Get Orders By User
-// @Tags		Order
-// @Accept		json
-// @Produce	json
-// @Security	ApiKeyAuth
-// @Param		id	path		string	true	"User ID"
-// @Success	200	{object}	orderResource.OrderList
-// @Router		/orders/user/{id} [get]
+// GetOrdersByUser retrieves all orders for a specific user.
+//
+//	@Summary	Get all orders for a specific user
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"User ID"
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/orders/user/{id} [get]
 func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 	var res []orderResource.Order
 
@@ -203,6 +215,17 @@ func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 	response.Success(c, http.StatusOK, "orders are collected successfully", &res, nil)
 }
 
+// EditOrder handles the editing of an existing order.
+//
+//	@Summary	Edit an existing order
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string				true	"Order ID"
+//	@Param		_	body		orderRequest.Order	true	"Order details"
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/order/{id} [put]
 func (h *OrderHandler) EditOrder(c *gin.Context) {
 	var req orderRequest.Order
 	var res orderResource.Order
@@ -221,11 +244,21 @@ func (h *OrderHandler) EditOrder(c *gin.Context) {
 	}
 
 	utils.CopyTo(&order, &res)
-	response.Success(c, http.StatusOK, "order is updated succesfully", &res, links(res.ID))
+	response.Success(c, http.StatusOK, "order is updated successfully", &res, links(res.ID))
 
 	_ = h.cache.SetWithExpiration(ordersCacheKey, &res, configs.ProductCachingTime)
 }
 
+// AcceptOrder handles the acceptance of an order.
+//
+//	@Summary	Accept an order
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"Order ID"
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/order/{id}/accept [put]
 func (h *OrderHandler) AcceptOrder(c *gin.Context) {
 	var res orderResource.Order
 
@@ -236,9 +269,19 @@ func (h *OrderHandler) AcceptOrder(c *gin.Context) {
 	}
 
 	utils.CopyTo(&order, &res)
-	response.Success(c, http.StatusOK, "order is accepted succesfully", &res, links(res.ID))
+	response.Success(c, http.StatusOK, "order is accepted successfully", &res, links(res.ID))
 }
 
+// CompleteOrder handles the completion of an order.
+//
+//	@Summary	Complete an order
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"Order ID"
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/order/{id}/complete [put]
 func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 	var res orderResource.Order
 
@@ -249,9 +292,19 @@ func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 	}
 
 	utils.CopyTo(&order, &res)
-	response.Success(c, http.StatusOK, "order is completed succesfully", &res, links(res.ID))
+	response.Success(c, http.StatusOK, "order is completed successfully", &res, links(res.ID))
 }
 
+// RejectOrder handles the rejection of an order.
+//
+//	@Summary	Reject an order
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string	true	"Order ID"
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/order/{id}/reject [put]
 func (h *OrderHandler) RejectOrder(c *gin.Context) {
 	var res orderResource.Order
 
@@ -263,9 +316,20 @@ func (h *OrderHandler) RejectOrder(c *gin.Context) {
 	}
 
 	utils.CopyTo(&order, &res)
-	response.Success(c, http.StatusOK, "order is rejected succesfully", &res, links(res.ID))
+	response.Success(c, http.StatusOK, "order is rejected successfully", &res, links(res.ID))
 }
 
+// UpdateWeight handles the updating of an order's weight.
+//
+//	@Summary	Update the weight of an order
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id		path		string	true	"Order ID"
+//	@Param		weight	path		string	true	"Weight"
+//	@Success	200		{object}	orderResource.Order
+//	@Router		/order/{id}/weight/{weight} [put]
 func (h *OrderHandler) UpdateWeight(c *gin.Context) {
 	var res orderResource.Order
 
@@ -285,6 +349,17 @@ func (h *OrderHandler) UpdateWeight(c *gin.Context) {
 	response.Success(c, http.StatusOK, "weight is updated successfully", &res, links(res.ID))
 }
 
+// PayOrder handles the payment of an order.
+//
+//	@Summary	Pay for an order
+//	@Tags		Order
+//	@Accept		json
+//	@Produce	json
+//	@Security	ApiKeyAuth
+//	@Param		id	path		string					true	"Order ID"
+//	@Param		_	body		orderRequest.Payment	true	"Payment details"
+//	@Success	200	{object}	orderResource.Order
+//	@Router		/order/{id}/pay [put]
 func (h *OrderHandler) PayOrder(c *gin.Context) {
 	var res orderResource.Order
 	var req orderRequest.Payment
@@ -296,7 +371,7 @@ func (h *OrderHandler) PayOrder(c *gin.Context) {
 	}
 
 	utils.CopyTo(&order, &res)
-	response.Success(c, http.StatusOK, "order is paid succesfully", &res, links(res.ID))
+	response.Success(c, http.StatusOK, "order is paid successfully", &res, links(res.ID))
 }
 
 var links = func(orderId string) map[string]response.HypermediaLink {
