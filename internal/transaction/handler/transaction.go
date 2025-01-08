@@ -11,10 +11,10 @@ import (
 
 type TransactionHandler struct {
 	service transactionService.TransactionServiceInterface
-	cache   redis.RedisInterface
+	cache   redis.IRedis
 }
 
-func NewTransactionHandler(service transactionService.TransactionServiceInterface, cache redis.RedisInterface) *TransactionHandler {
+func NewTransactionHandler(service transactionService.TransactionServiceInterface, cache redis.IRedis) *TransactionHandler {
 	return &TransactionHandler{
 		service: service,
 		cache:   cache,

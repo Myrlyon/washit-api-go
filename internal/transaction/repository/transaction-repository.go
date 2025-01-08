@@ -5,10 +5,10 @@ import "washit-api/pkg/db/dbs"
 type TransactionRepositoryInterface interface{}
 
 type TransactionRepository struct {
-	db dbs.DatabaseInterface
+	db dbs.IDatabase
 }
 
-func NewTransactionRepository(db dbs.DatabaseInterface) *TransactionRepository {
+func NewTransactionRepository(db dbs.IDatabase) *TransactionRepository {
 	return &TransactionRepository{
 		db: db,
 	}

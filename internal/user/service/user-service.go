@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	userModel "washit-api/internal/user/dto/model"
 	userRequest "washit-api/internal/user/dto/request"
@@ -34,6 +35,7 @@ type IUserService interface {
 	GetBannedUsers(c context.Context) ([]*userModel.User, error)
 	UpdateProfile(c context.Context, userId string, req *userRequest.UpdateProfile) (*userModel.User, error)
 	UpdatePassword(c context.Context, userId string, req *userRequest.UpdatePassword) error
+	UpdatePicture(c context.Context, userID string, req *userRequest.UpdatePicture) (*userModel.User, error)
 }
 
 type UserService struct {
@@ -215,6 +217,7 @@ func (s *UserService) Register(c context.Context, req *userRequest.Register) (*u
 	user.ID = sId
 	user.Password = hashedPassword
 	user.Image = imagePath
+	user.Role = "customer"
 
 	if err := s.repository.CreateUser(c, user); err != nil {
 		log.Println("Failed to create user ", err)
@@ -325,10 +328,33 @@ func (s *UserService) UpdatePassword(c context.Context, userId string, req *user
 
 	if err := s.repository.UpdateUser(c, user); err != nil {
 		log.Println("Failed to update user ", err)
-		return fmt.Errorf("failed to update user: %v", err)
+		return fmt.Errorf("failed to update password: %v", err)
 	}
 
 	return nil
+}
+
+func (s *UserService) UpdatePicture(c context.Context, userID string, req *userRequest.UpdatePicture) (*userModel.User, error) {
+	user, err := s.repository.GetUserByID(c, userID)
+	if err != nil {
+		log.Println("Failed to get profile information", err)
+		return nil, fmt.Errorf("user not found: %v", userID)
+	}
+
+	mediaName := fmt.Sprintf("%d.%s", time.Now().Unix(), "jpg")
+	if err := generate.SaveMediaToFile(req.Image, fmt.Sprintf("./public/profilePic/%s", mediaName)); err != nil {
+		log.Println("Failed to move the image to the directory", err)
+		return nil, fmt.Errorf("failed to move image to the directory: %v", err)
+	}
+
+	user.Image = mediaName
+
+	if err := s.repository.UpdateUser(c, user); err != nil {
+		log.Println("Failed to update profile picture ", err)
+		return nil, fmt.Errorf("failed to update profile picture: %v", err)
+	}
+
+	return user, nil
 }
 
 func (s *UserService) GetMe(c context.Context, userId string) (*userModel.User, error) {

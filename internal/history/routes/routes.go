@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface) {
+func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis) {
 	repository := historyRepository.NewHistoryRepository(db)
 	service := historyService.NewHistoryService(repository)
 	handler := history.NewHistoryHandler(service, cache)

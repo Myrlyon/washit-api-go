@@ -1,3 +1,4 @@
 package historyRequest
 
-type History struct{}
+type History struct {
+}

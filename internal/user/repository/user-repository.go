@@ -18,10 +18,10 @@ type IUserRepository interface {
 }
 
 type UserRepository struct {
-	db dbs.DatabaseInterface
+	db dbs.IDatabase
 }
 
-func NewUserRepository(db dbs.DatabaseInterface) *UserRepository {
+func NewUserRepository(db dbs.IDatabase) *UserRepository {
 	return &UserRepository{db: db}
 }
 

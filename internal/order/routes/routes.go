@@ -12,7 +12,7 @@ import (
 	"washit-api/pkg/redis"
 )
 
-func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterface, validator *validator.Validate) {
+func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis, validator *validator.Validate) {
 	repository := orderRepository.NewOrderRepository(db)
 	service := orderService.NewOrderService(repository, validator)
 	handler := order.NewOrderHandler(service, cache)
@@ -26,10 +26,12 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterfa
 
 	// Order Post
 	r.POST("/order", authMiddleware, handler.CreateOrder)
-	r.PUT("/order/:id/cancel", authMiddleware, handler.CancelOrder)
 
 	// Order Update
-	// r.PUT("/order/:id/update", authMiddleware, handler.UpdapteOrder)
+	r.PUT("/order/:id/edit", authMiddleware, handler.EditOrder)
+	r.PUT("/order/:id/cancel", authMiddleware, handler.CancelOrder)
+	r.PUT("/order/:id/complete", authMiddleware, handler.CompleteOrder)
+	r.PUT("/order/:id/pay", authMiddleware, handler.PayOrder)
 
 	// Admin Authority
 
@@ -39,9 +41,8 @@ func Main(r *gin.RouterGroup, db dbs.DatabaseInterface, cache redis.RedisInterfa
 
 	// Order Update
 	// r.PUT("/order/:id/update", )
-	// r.PUT("/order/:id/accept", adminAuthMiddleware, handler.AcceptOrder)
-	// r.PUT("/order/:id/reject", adminAuthMiddleware, handler.RejectOrder)
-	// r.PUT("/order/:id/complete", adminAuthMiddleware, handler.CompleteOrder)
+	r.PUT("/order/:id/accept", adminAuthMiddleware, handler.AcceptOrder)
+	r.PUT("/order/:id/reject", adminAuthMiddleware, handler.RejectOrder)
 	// r.PUT("/order/:id/status", adminAuthMiddleware, handler.UpdateOrderStatus)
 	r.PUT("/order/:id/weight/:weight", adminAuthMiddleware, handler.UpdateWeight)
 }

@@ -24,6 +24,9 @@ type UpdatePassword struct {
 	NewPassword     string `json:"newPassword" validate:"required,min=6,max=130"`
 	ConfirmPassword string `json:"confirmPassword" validate:"required,eqfield=NewPassword"`
 }
+type UpdatePicture struct {
+	Image []byte `json:"Image" validate:"required,file,ext=jpg|png|webp,max=2mb"`
+}
 
 type Google struct {
 	IDToken  string `json:"idToken"`

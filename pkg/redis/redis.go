@@ -16,7 +16,7 @@ const (
 // IRedis interface
 //
 //go:generate mockery --name=IRedis
-type RedisInterface interface {
+type IRedis interface {
 	IsConnected() bool
 	Get(key string, value interface{}) error
 	Set(key string, value interface{}) error
@@ -38,7 +38,7 @@ type redis struct {
 }
 
 // New Redis interface with config
-func New(config Config) RedisInterface {
+func New(config Config) IRedis {
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 
