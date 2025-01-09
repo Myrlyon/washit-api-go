@@ -37,7 +37,7 @@ type ErrorInfo struct {
 }
 
 type MetaInfo struct {
-	RequestID string    `json:"requestId,omitempty"`
+	RequestID string    `json:"requestID,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -48,7 +48,7 @@ func Success(c *gin.Context, statusCode int, message string, data interface{}, l
 		Message:    strings.ToLower(message),
 		Data:       data,
 		Meta: MetaInfo{
-			RequestID: c.GetString("requestId"),
+			RequestID: c.GetString("requestID"),
 			Timestamp: time.Now().UTC(),
 		},
 		Links: links,
@@ -66,7 +66,7 @@ func Error(c *gin.Context, statusCode int, message string, err error) {
 			Details: err.Error(),
 		},
 		Meta: MetaInfo{
-			RequestID: c.GetString("requestId"),
+			RequestID: c.GetString("requestID"),
 			Timestamp: time.Now().UTC(),
 		},
 	}

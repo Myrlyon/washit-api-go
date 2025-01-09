@@ -31,8 +31,8 @@ func RandomPassword() (string, error) {
 }
 
 func ImageFromUrl(imageUrl string) (imagePath string, err error) {
-	sId := time.Now().UnixNano()
-	savePath := fmt.Sprintf("./public/profilePic/%d.jpg", sId)
+	timeID := time.Now().UnixNano()
+	savePath := fmt.Sprintf("./public/profilePic/%d.jpg", timeID)
 
 	err = os.MkdirAll("./public/profilePic", os.ModePerm)
 	if err != nil {
@@ -50,10 +50,10 @@ func ImageFromUrl(imageUrl string) (imagePath string, err error) {
 		return "", fmt.Errorf("failed to download image, status: %s", resp.Status())
 	}
 
-	return fmt.Sprintf("%d.jpg", sId), nil
+	return fmt.Sprintf("%d.jpg", timeID), nil
 }
 
-func SnowflakeId(nodeID int64) (id int64, err error) {
+func SnowflakeID(nodeID int64) (id int64, err error) {
 	node, err := snowflake.NewNode(nodeID)
 	if err != nil {
 		fmt.Println("Error creating Snowflake node:", err)
@@ -62,7 +62,7 @@ func SnowflakeId(nodeID int64) (id int64, err error) {
 	return node.Generate().Int64(), nil
 }
 
-func AlphaNumericId(prefix string) (id string, err error) {
+func AlphaNumericID(prefix string) (id string, err error) {
 	length := 10
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 	var result []byte

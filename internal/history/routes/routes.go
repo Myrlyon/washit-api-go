@@ -17,7 +17,11 @@ func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis) {
 	handler := history.NewHistoryHandler(service, cache)
 
 	authMiddleware := middleware.JWTAuth()
-	// adminAuthMiddleware := middleware.JTWAuthAdmin()
+	adminAuthMiddleware := middleware.JWTAuthAdmin()
 
 	r.GET("/histories", authMiddleware, handler.GetHistoriesMe)
+	r.GET("/history/:id", authMiddleware, handler.GetHistoryByID)
+
+	//ADMIN
+	r.GET("/histories/user/:id", adminAuthMiddleware, handler.GetHistoriesByUser)
 }

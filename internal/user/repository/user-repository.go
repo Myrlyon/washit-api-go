@@ -2,6 +2,7 @@ package userRepository
 
 import (
 	"context"
+	"fmt"
 
 	userModel "washit-api/internal/user/dto/model"
 	"washit-api/pkg/db/dbs"
@@ -9,9 +10,9 @@ import (
 
 type IUserRepository interface {
 	CreateUser(ctx context.Context, user *userModel.User) error
-	GetUserByID(ctx context.Context, userId string) (*userModel.User, error)
+	GetUserByID(ctx context.Context, userID int64) (*userModel.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*userModel.User, error)
-	PutFcmToken(ctx context.Context, userId int64, fcmToken string) error
+	PutFcmToken(ctx context.Context, userID int64, fcmToken string) error
 	GetUsers(ctx context.Context) ([]*userModel.User, error)
 	GetBannedUsers(ctx context.Context) ([]*userModel.User, error)
 	UpdateUser(ctx context.Context, user *userModel.User) error
@@ -29,13 +30,13 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *userModel.User) e
 	return r.db.Create(ctx, user)
 }
 
-func (r *UserRepository) PutFcmToken(ctx context.Context, userId int64, fcmToken string) error {
-	return r.db.Update(ctx, &userModel.User{ID: userId, FcmToken: fcmToken})
+func (r *UserRepository) PutFcmToken(ctx context.Context, userID int64, fcmToken string) error {
+	return r.db.Update(ctx, &userModel.User{ID: userID, FcmToken: fcmToken})
 }
 
-func (r *UserRepository) GetUserByID(ctx context.Context, userId string) (*userModel.User, error) {
+func (r *UserRepository) GetUserByID(ctx context.Context, userID int64) (*userModel.User, error) {
 	var user userModel.User
-	if err := r.db.FindById(ctx, userId, &user); err != nil {
+	if err := r.db.FindByID(ctx, fmt.Sprintf("%d", userID), &user); err != nil {
 		return nil, err
 	}
 

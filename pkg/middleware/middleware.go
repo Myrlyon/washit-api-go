@@ -13,7 +13,7 @@ func JWTAuth() gin.HandlerFunc {
 	return JWT(jwt.AccessTokenType, "any")
 }
 
-func JTWAuthAdmin() gin.HandlerFunc {
+func JWTAuthAdmin() gin.HandlerFunc {
 	return JWT(jwt.AccessTokenType, "admin")
 }
 
@@ -43,8 +43,8 @@ func JWT(tokenType string, role string) gin.HandlerFunc {
 			return
 		}
 
-		c.Set("requestId", uuid.New().String())
-		c.Set("userId", payload["id"])
+		c.Set("requestID", uuid.New().String())
+		c.Set("userID", payload["id"])
 		c.Set("userRole", payload["role"])
 		c.Set("fcmToken", payload["fcm_token"])
 		c.Next()

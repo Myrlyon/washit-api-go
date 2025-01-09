@@ -45,10 +45,10 @@ var MeCacheKey = "/api/v1/profile/me"
 //	@Success	200	{object}	map[string]string	"accessToken"
 //	@Router		/auth/refresh-token [post]
 func (h *UserHandler) RefreshToken(c *gin.Context) {
-	userID := c.GetString("userId")
-	if userID == "" {
-		log.Println("Failed to get userId from context")
-		response.Error(c, http.StatusInternalServerError, "Failed to get userId from context", errors.New("Failed to get userId from context"))
+	userID := c.GetInt64("userID")
+	if userID == 0 {
+		log.Println("Failed to get userID from context")
+		response.Error(c, http.StatusInternalServerError, "Failed to get userID from context", errors.New("Failed to get userID from context"))
 		return
 	}
 
@@ -88,10 +88,10 @@ func (h *UserHandler) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	token, err := client.VerifyIDToken(context.Background(), req.IDToken)
+	token, err := client.VerifyIDToken(context.Background(), req.TokenID)
 	if err != nil {
-		log.Println("Failed to verify ID token ", err)
-		response.Error(c, http.StatusInternalServerError, "Failed to verify ID token", err)
+		log.Println("Failed to verify token ID ", err)
+		response.Error(c, http.StatusInternalServerError, "Failed to verify token ID ", err)
 		return
 	}
 
@@ -141,14 +141,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	tokenString, ok := accessToken.(string)
-	if !ok {
-		log.Println("Failed to assert accessToken as string")
-		response.Error(c, http.StatusInternalServerError, "Failed to assert accessToken as string", errors.New("Failed to assert accessToken as string"))
-		return
-	}
-
-	c.SetCookie("jwt", tokenString, jwt.AccessTokenExpiredTime, "/", c.Request.Host, false, true)
+	c.SetCookie("jwt", accessToken, jwt.AccessTokenExpiredTime, "/", c.Request.Host, false, true)
 
 	utils.CopyTo(&user, &res.User)
 	utils.CopyTo(&accessToken, &res.AccessToken)
@@ -213,7 +206,14 @@ func (h *UserHandler) Logout(c *gin.Context) {
 func (h *UserHandler) BanUser(c *gin.Context) {
 	var res userResource.User
 
-	user, err := h.service.BanUser(c, c.Param("id"))
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		log.Println("Invalid user ID format ", err)
+		response.Error(c, http.StatusBadRequest, "Invalid user ID format", err)
+		return
+	}
+
+	user, err := h.service.BanUser(c, id)
 	if err != nil {
 		log.Println("Failed to ban user ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to ban user", err)
@@ -237,7 +237,14 @@ func (h *UserHandler) BanUser(c *gin.Context) {
 func (h *UserHandler) UnbanUser(c *gin.Context) {
 	var res userResource.User
 
-	user, err := h.service.UnbanUser(c, c.Param("id"))
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		log.Println("Invalid user ID format ", err)
+		response.Error(c, http.StatusBadRequest, "Invalid user ID format", err)
+		return
+	}
+
+	user, err := h.service.UnbanUser(c, id)
 	if err != nil {
 		log.Println("Failed to unban user ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to unban user", err)
@@ -268,7 +275,7 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetString("userId")
+	userID := c.GetInt64("userID")
 	user, err := h.service.UpdateProfile(c, userID, &req)
 	if err != nil {
 		log.Println("Failed to update user ", err)
@@ -301,7 +308,7 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetString("userId")
+	userID := c.GetInt64("userID")
 	if err := h.service.UpdatePassword(c, userID, &req); err != nil {
 		log.Println("Failed to update password ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to update password", err)
@@ -330,7 +337,7 @@ func (h *UserHandler) UpdatePicture(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetString("userId")
+	userID := c.GetInt64("userID")
 	user, err := h.service.UpdatePicture(c, userID, &req)
 	if err != nil {
 		log.Println("Failed to update profile picture. err: ", err)
@@ -357,8 +364,7 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetString("userId")
-	user, err := h.service.GetMe(c, userID)
+	user, err := h.service.GetMe(c, c.GetInt64("id"))
 	if err != nil {
 		log.Println("Failed to get user ", err)
 		response.Error(c, http.StatusNotFound, "User not found", err)
@@ -417,7 +423,7 @@ func (h *UserHandler) GetBannedUsers(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully retrieved banned users", res, nil)
 }
 
-// GetUserById retrieves a user by ID
+// GetUserByID retrieves a user by ID
 //
 //	@Summary	Get a user by ID
 //	@Tags		User
@@ -427,10 +433,17 @@ func (h *UserHandler) GetBannedUsers(c *gin.Context) {
 //	@Param		id	path		string	true	"User ID"
 //	@Success	200	{object}	userResource.User
 //	@Router		/user/{id} [get]
-func (h *UserHandler) GetUserById(c *gin.Context) {
+func (h *UserHandler) GetUserByID(c *gin.Context) {
 	var res userResource.User
 
-	user, err := h.service.GetUserByID(c, c.Param("id"))
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		log.Println("Invalid user ID format ", err)
+		response.Error(c, http.StatusBadRequest, "Invalid user ID format", err)
+		return
+	}
+
+	user, err := h.service.GetUserByID(c, id)
 	if err != nil {
 		log.Println("Failed to get user ", err)
 		response.Error(c, http.StatusNotFound, "User not found", err)
@@ -441,14 +454,14 @@ func (h *UserHandler) GetUserById(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Successfully retrieved user", &res, nil)
 }
 
-var links = func(orderId int64) map[string]response.HypermediaLink {
+var links = func(orderID int64) map[string]response.HypermediaLink {
 	return map[string]response.HypermediaLink{
 		"self": {
 			Href:   "/profile/me",
 			Method: "GET",
 		},
 		"self-alternative": {
-			Href:   "/user/" + strconv.FormatInt(orderId, 10),
+			Href:   "/user/" + strconv.FormatInt(orderID, 10),
 			Method: "GET",
 		},
 		"update": {
@@ -456,11 +469,11 @@ var links = func(orderId int64) map[string]response.HypermediaLink {
 			Method: "PUT",
 		},
 		"ban": {
-			Href:   "/user/" + strconv.FormatInt(orderId, 10) + "/ban",
+			Href:   "/user/" + strconv.FormatInt(orderID, 10) + "/ban",
 			Method: "PUT",
 		},
 		"unban": {
-			Href:   "/user/" + strconv.FormatInt(orderId, 10) + "/unban",
+			Href:   "/user/" + strconv.FormatInt(orderID, 10) + "/unban",
 			Method: "PUT",
 		},
 	}

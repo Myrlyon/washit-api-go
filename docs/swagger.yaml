@@ -2,7 +2,7 @@ basePath: /api/v1
 definitions:
   orderRequest.Order:
     properties:
-      addressId:
+      addressID:
         type: integer
       collectDate:
         type: string
@@ -13,21 +13,21 @@ definitions:
       serviceType:
         type: string
     required:
-    - addressId
+    - addressID
     - collectDate
     - orderType
     - serviceType
     type: object
   orderRequest.Payment:
     properties:
-      transactionId:
+      transactionID:
         type: string
     required:
-    - transactionId
+    - transactionID
     type: object
   orderResource.Order:
     properties:
-      addressId:
+      addressID:
         type: integer
       collectDate:
         type: string
@@ -47,14 +47,14 @@ definitions:
         type: string
       status:
         type: string
-      transactionId:
+      transactionID:
         type: string
       updatedAt:
         type: string
       user:
         allOf:
         - $ref: '#/definitions/orderResource.User'
-        description: UserID        int              `json:"userId" gorm:"not null;index"`
+        description: UserID        int              `json:"userID" gorm:"not null;index"`
       weight:
         type: number
     type: object

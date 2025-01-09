@@ -92,9 +92,9 @@ func (_m *IUserRepository) GetUserByEmail(ctx context.Context, email string) (*u
 	return r0, r1
 }
 
-// GetUserByID provides a mock function with given fields: ctx, userId
-func (_m *IUserRepository) GetUserByID(ctx context.Context, userId string) (*userModel.User, error) {
-	ret := _m.Called(ctx, userId)
+// GetUserByID provides a mock function with given fields: ctx, userID
+func (_m *IUserRepository) GetUserByID(ctx context.Context, userID int64) (*userModel.User, error) {
+	ret := _m.Called(ctx, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetUserByID")
@@ -102,19 +102,19 @@ func (_m *IUserRepository) GetUserByID(ctx context.Context, userId string) (*use
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
-		return rf(ctx, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+		return rf(ctx, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
-		r0 = rf(ctx, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+		r0 = rf(ctx, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*userModel.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, userId)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -152,9 +152,9 @@ func (_m *IUserRepository) GetUsers(ctx context.Context) ([]*userModel.User, err
 	return r0, r1
 }
 
-// PutFcmToken provides a mock function with given fields: ctx, userId, fcmToken
-func (_m *IUserRepository) PutFcmToken(ctx context.Context, userId int64, fcmToken string) error {
-	ret := _m.Called(ctx, userId, fcmToken)
+// PutFcmToken provides a mock function with given fields: ctx, userID, fcmToken
+func (_m *IUserRepository) PutFcmToken(ctx context.Context, userID int64, fcmToken string) error {
+	ret := _m.Called(ctx, userID, fcmToken)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PutFcmToken")
@@ -162,7 +162,7 @@ func (_m *IUserRepository) PutFcmToken(ctx context.Context, userId int64, fcmTok
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64, string) error); ok {
-		r0 = rf(ctx, userId, fcmToken)
+		r0 = rf(ctx, userID, fcmToken)
 	} else {
 		r0 = ret.Error(0)
 	}

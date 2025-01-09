@@ -50,14 +50,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	userId, err := strconv.Atoi(c.GetString("userId"))
-	if err != nil {
-		log.Println("Failed to get user id ", err)
-		response.Error(c, http.StatusBadRequest, "failed to get user id", err)
-		return
-	}
-
-	order, err := h.service.CreateOrder(c, userId, &req)
+	order, err := h.service.CreateOrder(c, c.GetInt64("userID"), &req)
 	if err != nil {
 		log.Println("Failed to create order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to create order", err)
@@ -83,7 +76,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	var res orderResource.Order
 
-	order, err := h.service.CancelOrder(c, c.Param("id"), c.GetString("userId"))
+	order, err := h.service.CancelOrder(c, c.Param("id"), c.GetInt64("userID"))
 	if err != nil {
 		log.Println("Failed to get order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to get order", err)
@@ -96,7 +89,7 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	_ = h.cache.Remove(ordersCacheKey)
 }
 
-// GetOrderById retrieves an order by its ID.
+// GetOrderByID retrieves an order by its ID.
 //
 //	@Summary	Get order details by ID
 //	@Tags		Order
@@ -106,17 +99,17 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 //	@Param		id	path		string	true	"Order ID"
 //	@Success	200	{object}	orderResource.Order
 //	@Router		/order/{id} [get]
-func (h *OrderHandler) GetOrderById(c *gin.Context) {
+func (h *OrderHandler) GetOrderByID(c *gin.Context) {
 	var res orderResource.Order
-	var userId string
+	var userID int64
 
 	if c.GetString("userRole") == "admin" {
-		userId = "0"
+		userID = 0
 	} else {
-		userId = c.GetString("userId")
+		userID = c.GetInt64("userID")
 	}
 
-	order, err := h.service.GetOrderById(c, c.Param("id"), userId)
+	order, err := h.service.GetOrderByID(c, c.Param("id"), userID)
 	if err != nil {
 		log.Println("Failed to get order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to get order", err)
@@ -145,8 +138,8 @@ func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
 		return
 	}
 
-	userId := c.GetString("userId")
-	orders, err := h.service.GetOrdersMe(c, userId)
+	userID := c.GetInt64("userID")
+	orders, err := h.service.GetOrdersMe(c, userID)
 	if err != nil {
 		log.Println("Failed to get orders ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to get orders", err)
@@ -204,7 +197,14 @@ func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
 func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 	var res []orderResource.Order
 
-	orders, err := h.service.GetOrdersByUser(c, c.Param("id"))
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		log.Println("Invalid user ID ", err)
+		response.Error(c, http.StatusBadRequest, "invalid user ID", err)
+		return
+	}
+
+	orders, err := h.service.GetOrdersByUser(c, userID)
 	if err != nil {
 		log.Println("Failed to get orders ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to get orders", err)
@@ -236,7 +236,7 @@ func (h *OrderHandler) EditOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := h.service.EditOrder(c, c.Param("id"), c.GetString("userId"), &req)
+	order, err := h.service.EditOrder(c, c.Param("id"), c.GetInt64("userID"), &req)
 	if err != nil {
 		log.Println("Failed to update order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to update order", err)
@@ -285,7 +285,7 @@ func (h *OrderHandler) AcceptOrder(c *gin.Context) {
 func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 	var res orderResource.Order
 
-	order, err := h.service.CompleteOrder(c, c.Param("id"), c.GetString("userId"))
+	order, err := h.service.CompleteOrder(c, c.Param("id"), c.GetInt64("userID"))
 	if err != nil {
 		log.Println("Failed to complete order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to complete order", err)
@@ -374,10 +374,10 @@ func (h *OrderHandler) PayOrder(c *gin.Context) {
 	response.Success(c, http.StatusOK, "order is paid successfully", &res, links(res.ID))
 }
 
-var links = func(orderId string) map[string]response.HypermediaLink {
+var links = func(orderID string) map[string]response.HypermediaLink {
 	return map[string]response.HypermediaLink{
 		"self": {
-			Href:   "/order/" + orderId,
+			Href:   "/order/" + orderID,
 			Method: "GET",
 		},
 	}

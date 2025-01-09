@@ -21,7 +21,7 @@ const (
 	RefreshTokenType        = "x-refresh"    // 30 days
 )
 
-func GenerateAccessToken(payload map[string]interface{}) string {
+func GenerateAccessToken(payload map[string]interface{}) (string, error) {
 	payload["type"] = AccessTokenType
 	tokenContent := jwt.MapClaims{
 		"payload": payload,
@@ -31,13 +31,13 @@ func GenerateAccessToken(payload map[string]interface{}) string {
 	token, err := jwtToken.SignedString([]byte(configs.Envs.AuthSecret))
 	if err != nil {
 		log.Println("Failed to generate access token: ", err)
-		return ""
+		return "", err
 	}
 
-	return token
+	return token, nil
 }
 
-func GenerateRefreshToken(payload map[string]interface{}) string {
+func GenerateRefreshToken(payload map[string]interface{}) (string, error) {
 	payload["type"] = RefreshTokenType
 	tokenContent := jwt.MapClaims{
 		"payload": payload,
@@ -47,10 +47,10 @@ func GenerateRefreshToken(payload map[string]interface{}) string {
 	token, err := jwtToken.SignedString([]byte(configs.Envs.AuthSecret))
 	if err != nil {
 		log.Println("Failed to generate refresh token: ", err)
-		return ""
+		return "", err
 	}
 
-	return token
+	return token, nil
 }
 
 func ValidateToken(jwtToken string) (map[string]interface{}, error) {

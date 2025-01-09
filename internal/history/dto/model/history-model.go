@@ -7,9 +7,9 @@ import (
 
 type History struct {
 	ID            string         `json:"id" gorm:"primaryKey unique"`
-	UserID        int            `json:"userId" gorm:"not null;index"`
-	TransactionID int            `json:"transactionId"`
-	AddressID     int            `json:"addressId"`
+	UserID        int64          `json:"userID" gorm:"not null;index"`
+	TransactionID int            `json:"transactionID"`
+	AddressID     int            `json:"addressID"`
 	Status        string         `json:"status"`
 	Note          string         `json:"note"`
 	ServiceType   string         `json:"serviceType"`

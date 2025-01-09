@@ -8,9 +8,9 @@ import (
 
 type Transaction struct {
 	ID             string           `json:"id" gorm:"primaryKey unique"`
-	OrderID        string           `json:"orderId"`
-	UserID         int64            `json:"userId" gorm:"not null;index"`
-	ExternalID     string           `json:"externalId"`
+	OrderID        string           `json:"orderID"`
+	UserID         int64            `json:"userID" gorm:"not null;index"`
+	ExternalID     string           `json:"externalID"`
 	PaymentMethod  string           `json:"paymentMethod"`
 	Status         string           `json:"status"`
 	Amount         *decimal.Decimal `json:"amount" gorm:"type:numeric"`

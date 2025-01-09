@@ -29,6 +29,6 @@ type UpdatePicture struct {
 }
 
 type Google struct {
-	IDToken  string `json:"idToken"`
+	TokenID  string `json:"tokenID"`
 	FcmToken string `json:"fcmToken"`
 }

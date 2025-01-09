@@ -921,13 +921,13 @@ const docTemplate = `{
         "orderRequest.Order": {
             "type": "object",
             "required": [
-                "addressId",
+                "addressID",
                 "collectDate",
                 "orderType",
                 "serviceType"
             ],
             "properties": {
-                "addressId": {
+                "addressID": {
                     "type": "integer"
                 },
                 "collectDate": {
@@ -947,10 +947,10 @@ const docTemplate = `{
         "orderRequest.Payment": {
             "type": "object",
             "required": [
-                "transactionId"
+                "transactionID"
             ],
             "properties": {
-                "transactionId": {
+                "transactionID": {
                     "type": "string"
                 }
             }
@@ -958,7 +958,7 @@ const docTemplate = `{
         "orderResource.Order": {
             "type": "object",
             "properties": {
-                "addressId": {
+                "addressID": {
                     "type": "integer"
                 },
                 "collectDate": {
@@ -988,14 +988,14 @@ const docTemplate = `{
                 "status": {
                     "type": "string"
                 },
-                "transactionId": {
+                "transactionID": {
                     "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
                 },
                 "user": {
-                    "description": "UserID        int              ` + "`" + `json:\"userId\" gorm:\"not null;index\"` + "`" + `",
+                    "description": "UserID        int              ` + "`" + `json:\"userID\" gorm:\"not null;index\"` + "`" + `",
                     "allOf": [
                         {
                             "$ref": "#/definitions/orderResource.User"
