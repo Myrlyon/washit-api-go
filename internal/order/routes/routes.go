@@ -18,11 +18,11 @@ func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis, validator *v
 	handler := order.NewOrderHandler(service, cache)
 
 	authMiddleware := middleware.JWTAuth()
-	adminAuthMiddleware := middleware.JTWAuthAdmin()
+	adminAuthMiddleware := middleware.JWTAuthAdmin()
 
 	// Order Get
 	r.GET("/orders", authMiddleware, handler.GetOrdersMe)
-	r.GET("/order/:id", authMiddleware, handler.GetOrderById)
+	r.GET("/order/:id", authMiddleware, handler.GetOrderByID)
 
 	// Order Post
 	r.POST("/order", authMiddleware, handler.CreateOrder)

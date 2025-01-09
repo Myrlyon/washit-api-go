@@ -19,7 +19,7 @@ func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis, app *firebas
 	handler := user.NewUserHandler(service, cache, app)
 
 	authMiddleware := middleware.JWTAuth()
-	adminAuthMiddleware := middleware.JTWAuthAdmin()
+	adminAuthMiddleware := middleware.JWTAuthAdmin()
 	authRefreshMiddleware := middleware.JWTRefresh()
 
 	r.POST("/auth/refresh", authRefreshMiddleware, handler.RefreshToken)
@@ -28,8 +28,8 @@ func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis, app *firebas
 	r.POST("/auth/register", handler.Register)
 	r.POST("/auth/login", handler.Login)
 	r.POST("/auth/logout", authMiddleware, handler.Logout)
-	r.GET("/auth/google", handler.Login)
-	r.POST("/auth/google/callback", handler.Login)
+	r.POST("/auth/google", handler.LoginWithGoogle)
+	// r.POST("/auth/google/callback", handler.Login)
 
 	// Profile Get
 	r.GET("/profile/me", authMiddleware, handler.GetMe)
@@ -44,7 +44,7 @@ func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis, app *firebas
 	// Users
 	r.GET("/users", adminAuthMiddleware, handler.GetUsers)
 	r.GET("/users/banned", adminAuthMiddleware, handler.GetBannedUsers)
-	r.GET("/user/:id", adminAuthMiddleware, handler.GetUserById)
+	r.GET("/user/:id", adminAuthMiddleware, handler.GetUserByID)
 	r.PUT("/user/:id/ban", adminAuthMiddleware, handler.BanUser)
 	r.PUT("/user/:id/unban", adminAuthMiddleware, handler.UnbanUser)
 }

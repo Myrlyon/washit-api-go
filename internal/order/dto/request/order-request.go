@@ -5,7 +5,7 @@ import (
 )
 
 type Order struct {
-	AddressID   int       `json:"addressId" validate:"required"`
+	AddressID   int       `json:"addressID" validate:"required"`
 	Note        string    `json:"note"`
 	ServiceType string    `json:"serviceType" validate:"required"`
 	OrderType   string    `json:"orderType" validate:"required"`
@@ -13,5 +13,5 @@ type Order struct {
 }
 
 type Payment struct {
-	TransactionID string `json:"transactionId" validate:"required"`
+	TransactionID string `json:"transactionID" validate:"required"`
 }

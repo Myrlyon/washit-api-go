@@ -5,8 +5,8 @@ import "time"
 type History struct {
 	ID            string    `json:"id" gorm:"primaryKey unique"`
 	User          User      `json:"user" gorm:"foreignKey:UserID;references:ID"`
-	TransactionID int       `json:"transactionId"`
-	AddressID     int       `json:"addressId"`
+	TransactionID int       `json:"transactionID"`
+	AddressID     int       `json:"addressID"`
 	Status        string    `json:"status"`
 	Note          string    `json:"note"`
 	ServiceType   string    `json:"serviceType"`

@@ -19,9 +19,9 @@ type IUserService struct {
 	mock.Mock
 }
 
-// BanUser provides a mock function with given fields: c, userId
-func (_m *IUserService) BanUser(c context.Context, userId string) (*userModel.User, error) {
-	ret := _m.Called(c, userId)
+// BanUser provides a mock function with given fields: c, userID
+func (_m *IUserService) BanUser(c context.Context, userID int64) (*userModel.User, error) {
+	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BanUser")
@@ -29,19 +29,19 @@ func (_m *IUserService) BanUser(c context.Context, userId string) (*userModel.Us
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
-		return rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
-		r0 = rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*userModel.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(c, userId)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -79,9 +79,9 @@ func (_m *IUserService) GetBannedUsers(c context.Context) ([]*userModel.User, er
 	return r0, r1
 }
 
-// GetMe provides a mock function with given fields: c, userId
-func (_m *IUserService) GetMe(c context.Context, userId string) (*userModel.User, error) {
-	ret := _m.Called(c, userId)
+// GetMe provides a mock function with given fields: c, userID
+func (_m *IUserService) GetMe(c context.Context, userID int64) (*userModel.User, error) {
+	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetMe")
@@ -89,19 +89,19 @@ func (_m *IUserService) GetMe(c context.Context, userId string) (*userModel.User
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
-		return rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
-		r0 = rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*userModel.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(c, userId)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -109,9 +109,9 @@ func (_m *IUserService) GetMe(c context.Context, userId string) (*userModel.User
 	return r0, r1
 }
 
-// GetUserByID provides a mock function with given fields: c, userId
-func (_m *IUserService) GetUserByID(c context.Context, userId string) (*userModel.User, error) {
-	ret := _m.Called(c, userId)
+// GetUserByID provides a mock function with given fields: c, userID
+func (_m *IUserService) GetUserByID(c context.Context, userID int64) (*userModel.User, error) {
+	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetUserByID")
@@ -119,19 +119,19 @@ func (_m *IUserService) GetUserByID(c context.Context, userId string) (*userMode
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
-		return rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
-		r0 = rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*userModel.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(c, userId)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -170,7 +170,7 @@ func (_m *IUserService) GetUsers(c context.Context) ([]*userModel.User, error) {
 }
 
 // Login provides a mock function with given fields: c, req
-func (_m *IUserService) Login(c context.Context, req *userRequest.Login) (*userModel.User, interface{}, interface{}, error) {
+func (_m *IUserService) Login(c context.Context, req *userRequest.Login) (*userModel.User, string, string, error) {
 	ret := _m.Called(c, req)
 
 	if len(ret) == 0 {
@@ -178,10 +178,10 @@ func (_m *IUserService) Login(c context.Context, req *userRequest.Login) (*userM
 	}
 
 	var r0 *userModel.User
-	var r1 interface{}
-	var r2 interface{}
+	var r1 string
+	var r2 string
 	var r3 error
-	if rf, ok := ret.Get(0).(func(context.Context, *userRequest.Login) (*userModel.User, interface{}, interface{}, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *userRequest.Login) (*userModel.User, string, string, error)); ok {
 		return rf(c, req)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *userRequest.Login) *userModel.User); ok {
@@ -192,20 +192,16 @@ func (_m *IUserService) Login(c context.Context, req *userRequest.Login) (*userM
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *userRequest.Login) interface{}); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *userRequest.Login) string); ok {
 		r1 = rf(c, req)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(interface{})
-		}
+		r1 = ret.Get(1).(string)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, *userRequest.Login) interface{}); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, *userRequest.Login) string); ok {
 		r2 = rf(c, req)
 	} else {
-		if ret.Get(2) != nil {
-			r2 = ret.Get(2).(interface{})
-		}
+		r2 = ret.Get(2).(string)
 	}
 
 	if rf, ok := ret.Get(3).(func(context.Context, *userRequest.Login) error); ok {
@@ -218,7 +214,7 @@ func (_m *IUserService) Login(c context.Context, req *userRequest.Login) (*userM
 }
 
 // LoginWithGoogle provides a mock function with given fields: c, req, userInfo
-func (_m *IUserService) LoginWithGoogle(c context.Context, req *userRequest.Google, userInfo *auth.UserInfo) (*userModel.User, interface{}, interface{}, error) {
+func (_m *IUserService) LoginWithGoogle(c context.Context, req *userRequest.Google, userInfo *auth.UserInfo) (*userModel.User, string, string, error) {
 	ret := _m.Called(c, req, userInfo)
 
 	if len(ret) == 0 {
@@ -226,10 +222,10 @@ func (_m *IUserService) LoginWithGoogle(c context.Context, req *userRequest.Goog
 	}
 
 	var r0 *userModel.User
-	var r1 interface{}
-	var r2 interface{}
+	var r1 string
+	var r2 string
 	var r3 error
-	if rf, ok := ret.Get(0).(func(context.Context, *userRequest.Google, *auth.UserInfo) (*userModel.User, interface{}, interface{}, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *userRequest.Google, *auth.UserInfo) (*userModel.User, string, string, error)); ok {
 		return rf(c, req, userInfo)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *userRequest.Google, *auth.UserInfo) *userModel.User); ok {
@@ -240,20 +236,16 @@ func (_m *IUserService) LoginWithGoogle(c context.Context, req *userRequest.Goog
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *userRequest.Google, *auth.UserInfo) interface{}); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *userRequest.Google, *auth.UserInfo) string); ok {
 		r1 = rf(c, req, userInfo)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(interface{})
-		}
+		r1 = ret.Get(1).(string)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, *userRequest.Google, *auth.UserInfo) interface{}); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, *userRequest.Google, *auth.UserInfo) string); ok {
 		r2 = rf(c, req, userInfo)
 	} else {
-		if ret.Get(2) != nil {
-			r2 = ret.Get(2).(interface{})
-		}
+		r2 = ret.Get(2).(string)
 	}
 
 	if rf, ok := ret.Get(3).(func(context.Context, *userRequest.Google, *auth.UserInfo) error); ok {
@@ -265,17 +257,17 @@ func (_m *IUserService) LoginWithGoogle(c context.Context, req *userRequest.Goog
 	return r0, r1, r2, r3
 }
 
-// Logout provides a mock function with given fields: c, userId
-func (_m *IUserService) Logout(c context.Context, userId string) error {
-	ret := _m.Called(c, userId)
+// Logout provides a mock function with given fields: c, userID
+func (_m *IUserService) Logout(c context.Context, userID int64) error {
+	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Logout")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(c, userID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -283,9 +275,9 @@ func (_m *IUserService) Logout(c context.Context, userId string) error {
 	return r0
 }
 
-// RefreshToken provides a mock function with given fields: c, userId
-func (_m *IUserService) RefreshToken(c context.Context, userId string) (string, error) {
-	ret := _m.Called(c, userId)
+// RefreshToken provides a mock function with given fields: c, userID
+func (_m *IUserService) RefreshToken(c context.Context, userID int64) (string, error) {
+	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RefreshToken")
@@ -293,17 +285,17 @@ func (_m *IUserService) RefreshToken(c context.Context, userId string) (string, 
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (string, error)); ok {
+		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) string); ok {
+		r0 = rf(c, userID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(c, userId)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -341,9 +333,9 @@ func (_m *IUserService) Register(c context.Context, req *userRequest.Register) (
 	return r0, r1
 }
 
-// UnbanUser provides a mock function with given fields: c, userId
-func (_m *IUserService) UnbanUser(c context.Context, userId string) (*userModel.User, error) {
-	ret := _m.Called(c, userId)
+// UnbanUser provides a mock function with given fields: c, userID
+func (_m *IUserService) UnbanUser(c context.Context, userID int64) (*userModel.User, error) {
+	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UnbanUser")
@@ -351,19 +343,19 @@ func (_m *IUserService) UnbanUser(c context.Context, userId string) (*userModel.
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
-		return rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
-		r0 = rf(c, userId)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*userModel.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(c, userId)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -371,17 +363,17 @@ func (_m *IUserService) UnbanUser(c context.Context, userId string) (*userModel.
 	return r0, r1
 }
 
-// UpdatePassword provides a mock function with given fields: c, userId, req
-func (_m *IUserService) UpdatePassword(c context.Context, userId string, req *userRequest.UpdatePassword) error {
-	ret := _m.Called(c, userId, req)
+// UpdatePassword provides a mock function with given fields: c, userID, req
+func (_m *IUserService) UpdatePassword(c context.Context, userID int64, req *userRequest.UpdatePassword) error {
+	ret := _m.Called(c, userID, req)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdatePassword")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *userRequest.UpdatePassword) error); ok {
-		r0 = rf(c, userId, req)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdatePassword) error); ok {
+		r0 = rf(c, userID, req)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -389,9 +381,39 @@ func (_m *IUserService) UpdatePassword(c context.Context, userId string, req *us
 	return r0
 }
 
-// UpdateProfile provides a mock function with given fields: c, userId, req
-func (_m *IUserService) UpdateProfile(c context.Context, userId string, req *userRequest.UpdateProfile) (*userModel.User, error) {
-	ret := _m.Called(c, userId, req)
+// UpdatePicture provides a mock function with given fields: c, userID, req
+func (_m *IUserService) UpdatePicture(c context.Context, userID int64, req *userRequest.UpdatePicture) (*userModel.User, error) {
+	ret := _m.Called(c, userID, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdatePicture")
+	}
+
+	var r0 *userModel.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdatePicture) (*userModel.User, error)); ok {
+		return rf(c, userID, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdatePicture) *userModel.User); ok {
+		r0 = rf(c, userID, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*userModel.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64, *userRequest.UpdatePicture) error); ok {
+		r1 = rf(c, userID, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpdateProfile provides a mock function with given fields: c, userID, req
+func (_m *IUserService) UpdateProfile(c context.Context, userID int64, req *userRequest.UpdateProfile) (*userModel.User, error) {
+	ret := _m.Called(c, userID, req)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateProfile")
@@ -399,19 +421,19 @@ func (_m *IUserService) UpdateProfile(c context.Context, userId string, req *use
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *userRequest.UpdateProfile) (*userModel.User, error)); ok {
-		return rf(c, userId, req)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdateProfile) (*userModel.User, error)); ok {
+		return rf(c, userID, req)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *userRequest.UpdateProfile) *userModel.User); ok {
-		r0 = rf(c, userId, req)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdateProfile) *userModel.User); ok {
+		r0 = rf(c, userID, req)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*userModel.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *userRequest.UpdateProfile) error); ok {
-		r1 = rf(c, userId, req)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, *userRequest.UpdateProfile) error); ok {
+		r1 = rf(c, userID, req)
 	} else {
 		r1 = ret.Error(1)
 	}

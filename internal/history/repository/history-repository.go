@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type HistoryRepositoryInterface interface {
-	GetHistoriesByUser(c *gin.Context, userId string) ([]*historyModel.History, error)
+type IHistoryRepository interface {
+	GetHistoriesByUser(c *gin.Context, userID int64) ([]*historyModel.History, error)
 }
 
 type HistoryRepository struct {
@@ -19,7 +19,7 @@ func NewHistoryRepository(db dbs.IDatabase) *HistoryRepository {
 	return &HistoryRepository{db: db}
 }
 
-func (r *HistoryRepository) GetHistoriesByUser(c *gin.Context, userId string) ([]*historyModel.History, error) {
+func (r *HistoryRepository) GetHistoriesByUser(c *gin.Context, userID int64) ([]*historyModel.History, error) {
 	var histories []*historyModel.History
 	query := []dbs.FindOption{
 		dbs.WithLimit(10),
@@ -27,8 +27,8 @@ func (r *HistoryRepository) GetHistoriesByUser(c *gin.Context, userId string) ([
 		dbs.WithPreload([]string{"User"}),
 	}
 
-	if userId != "" {
-		query = append(query, dbs.WithQuery(dbs.NewQuery("user_id = ?", userId)))
+	if userID != 0 {
+		query = append(query, dbs.WithQuery(dbs.NewQuery("user_id = ?", userID)))
 	}
 
 	if err := r.db.Find(c, &histories, query...); err != nil {

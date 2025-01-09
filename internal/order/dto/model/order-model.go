@@ -10,9 +10,9 @@ import (
 
 type Order struct {
 	ID            string           `json:"id" gorm:"primaryKey unique"`
-	UserID        int              `json:"userId" gorm:"not null;index"`
-	TransactionID string           `json:"transactionId"`
-	AddressID     int              `json:"addressId"`
+	UserID        int64            `json:"userID" gorm:"not null;index"`
+	TransactionID string           `json:"transactionID"`
+	AddressID     int              `json:"addressID"`
 	Status        string           `json:"status" gorm:"default:created"`
 	Note          string           `json:"note"`
 	ServiceType   string           `json:"serviceType"`

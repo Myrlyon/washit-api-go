@@ -20,7 +20,7 @@ type IDatabase interface {
 	CreateInBatches(ctx context.Context, docs any, batchSize int) error
 	Update(ctx context.Context, doc any) error
 	Delete(ctx context.Context, value any, opts ...FindOption) error
-	FindById(ctx context.Context, id string, result any) error
+	FindByID(ctx context.Context, id string, result any) error
 	FindOne(ctx context.Context, result any, opts ...FindOption) error
 	Find(ctx context.Context, result any, opts ...FindOption) error
 	Count(ctx context.Context, model any, total *int64, opts ...FindOption) error
@@ -127,7 +127,7 @@ func (d *Database) Delete(ctx context.Context, value any, opts ...FindOption) er
 	return query.Delete(value).Error
 }
 
-func (d *Database) FindById(ctx context.Context, id string, result any) error {
+func (d *Database) FindByID(ctx context.Context, id string, result any) error {
 	ctx, cancel := context.WithTimeout(ctx, DatabaseTimeout)
 	defer cancel()
 

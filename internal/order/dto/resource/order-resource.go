@@ -8,10 +8,10 @@ import (
 
 type Order struct {
 	ID string `json:"id" gorm:"primaryKey"`
-	// UserID        int              `json:"userId" gorm:"not null;index"`
+	// UserID        int              `json:"userID" gorm:"not null;index"`
 	User          User             `json:"user" gorm:"foreignKey:UserID;references:ID"`
-	TransactionID string           `json:"transactionId"`
-	AddressID     int              `json:"addressId"`
+	TransactionID string           `json:"transactionID"`
+	AddressID     int              `json:"addressID"`
 	Status        string           `json:"status"`
 	Note          string           `json:"note"`
 	ServiceType   string           `json:"serviceType"`
