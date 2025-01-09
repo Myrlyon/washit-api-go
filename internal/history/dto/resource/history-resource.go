@@ -1,6 +1,14 @@
 package historyResource
 
-import "time"
+import (
+	"time"
+	"washit-api/pkg/paging"
+)
+
+type ListHistory struct {
+	Histories     []*History           `json:"histories,omitempty"`
+	Pagination *paging.Pagination `json:"pagination,omitempty"`
+}
 
 type History struct {
 	ID            string    `json:"id" gorm:"primaryKey unique"`

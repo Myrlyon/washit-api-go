@@ -50,7 +50,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := h.service.CreateOrder(c, c.GetInt64("userID"), &req)
+	order, err := h.service.CreateOrder(c, c.GetString("userID"), &req)
 	if err != nil {
 		log.Println("Failed to create order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to create order", err)
@@ -76,7 +76,9 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	var res orderResource.Order
 
-	order, err := h.service.CancelOrder(c, c.Param("id"), c.GetInt64("userID"))
+
+
+	order, err := h.service.CancelOrder(c, c.Param("id"), c.GetString("userID"))
 	if err != nil {
 		log.Println("Failed to get order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to get order", err)
@@ -101,12 +103,12 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 //	@Router		/order/{id} [get]
 func (h *OrderHandler) GetOrderByID(c *gin.Context) {
 	var res orderResource.Order
-	var userID int64
+	var userID string
 
 	if c.GetString("userRole") == "admin" {
-		userID = 0
+		userID = ""
 	} else {
-		userID = c.GetInt64("userID")
+		userID = c.GetString("userID")
 	}
 
 	order, err := h.service.GetOrderByID(c, c.Param("id"), userID)
@@ -138,8 +140,7 @@ func (h *OrderHandler) GetOrdersMe(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetInt64("userID")
-	orders, err := h.service.GetOrdersMe(c, userID)
+	orders, err := h.service.GetOrdersMe(c, c.GetString("userID"))
 	if err != nil {
 		log.Println("Failed to get orders ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to get orders", err)
@@ -197,14 +198,7 @@ func (h *OrderHandler) GetOrdersAll(c *gin.Context) {
 func (h *OrderHandler) GetOrdersByUser(c *gin.Context) {
 	var res []orderResource.Order
 
-	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		log.Println("Invalid user ID ", err)
-		response.Error(c, http.StatusBadRequest, "invalid user ID", err)
-		return
-	}
-
-	orders, err := h.service.GetOrdersByUser(c, userID)
+	orders, err := h.service.GetOrdersByUser(c, c.Param("id"))
 	if err != nil {
 		log.Println("Failed to get orders ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to get orders", err)
@@ -236,7 +230,7 @@ func (h *OrderHandler) EditOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := h.service.EditOrder(c, c.Param("id"), c.GetInt64("userID"), &req)
+	order, err := h.service.EditOrder(c, c.Param("id"), c.GetString("userID"), &req)
 	if err != nil {
 		log.Println("Failed to update order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to update order", err)
@@ -285,7 +279,7 @@ func (h *OrderHandler) AcceptOrder(c *gin.Context) {
 func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 	var res orderResource.Order
 
-	order, err := h.service.CompleteOrder(c, c.Param("id"), c.GetInt64("userID"))
+	order, err := h.service.CompleteOrder(c, c.Param("id"), c.GetString("userID"))
 	if err != nil {
 		log.Println("Failed to complete order ", err)
 		response.Error(c, http.StatusInternalServerError, "failed to complete order", err)

@@ -172,7 +172,7 @@ func (suite *UserServiceTestSuite) TestUpdateProfileSuccess() {
 	suite.mockRepo.On("UpdateUser", mock.Anything, mock.Anything).
 		Return(nil).Times(1)
 
-	user, err := suite.service.UpdateProfile(context.Background(), 0, req)
+	user, err := suite.service.UpdateProfile(context.Background(), "0", req)
 	suite.NotNil(user)
 	suite.Nil(err)
 }
@@ -187,7 +187,7 @@ func (suite *UserServiceTestSuite) TestUpdateProfileGetUserByIDFail() {
 	suite.mockRepo.On("GetUserByID", mock.Anything, mock.Anything).
 		Return(nil, errors.New("error")).Times(1)
 
-	user, err := suite.service.UpdateProfile(context.Background(), 0, req)
+	user, err := suite.service.UpdateProfile(context.Background(), "0", req)
 	suite.Nil(user)
 	suite.NotNil(err)
 }
@@ -205,7 +205,7 @@ func (suite *UserServiceTestSuite) TestUpdateProfileUpdateUserFail() {
 	suite.mockRepo.On("UpdateUser", mock.Anything, mock.Anything).
 		Return(errors.New("error")).Times(1)
 
-	user, err := suite.service.UpdateProfile(context.Background(), 0, req)
+	user, err := suite.service.UpdateProfile(context.Background(), "0", req)
 	suite.Nil(user)
 	suite.NotNil(err)
 }
@@ -229,7 +229,7 @@ func (suite *UserServiceTestSuite) TestUpdatePasswordSuccess() {
 	suite.mockRepo.On("UpdateUser", mock.Anything, mock.Anything).
 		Return(nil).Times(1)
 
-	err = suite.service.UpdatePassword(context.Background(), 0, req)
+	err = suite.service.UpdatePassword(context.Background(), "0", req)
 	suite.Nil(err)
 }
 
@@ -249,7 +249,7 @@ func (suite *UserServiceTestSuite) TestUpdatePasswordMinPasswordLength() {
 	suite.mockRepo.On("UpdateUser", mock.Anything, mock.Anything).
 		Return(nil).Times(1)
 
-	err = suite.service.UpdatePassword(context.Background(), 0, req)
+	err = suite.service.UpdatePassword(context.Background(), "0", req)
 	suite.NotNil(err)
 }
 
@@ -263,7 +263,7 @@ func (suite *UserServiceTestSuite) TestUpdatePasswordGetUserByIDFail() {
 	suite.mockRepo.On("GetUserByID", mock.Anything, mock.Anything).
 		Return(nil, errors.New("error")).Times(1)
 
-	err := suite.service.UpdatePassword(context.Background(), 0, req)
+	err := suite.service.UpdatePassword(context.Background(), "0", req)
 	suite.NotNil(err)
 }
 
@@ -280,6 +280,6 @@ func (suite *UserServiceTestSuite) TestUpdatePasswordWrongOldPassword() {
 	suite.mockRepo.On("GetUserByID", mock.Anything, mock.Anything).
 		Return(&userModel.User{Password: hashedPassword}, nil).Times(1)
 
-	err = suite.service.UpdatePassword(context.Background(), 0, req)
+	err = suite.service.UpdatePassword(context.Background(), "0", req)
 	suite.NotNil(err)
 }

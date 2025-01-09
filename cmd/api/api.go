@@ -12,6 +12,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "washit-api/docs"
+	historyRoutes "washit-api/internal/history/routes"
 	orderRoutes "washit-api/internal/order/routes"
 	userRoutes "washit-api/internal/user/routes"
 	"washit-api/pkg/configs"
@@ -69,6 +70,7 @@ func (s Server) MapRoutes() error {
 	s.engine.Static("/public", "./public")
 	userRoutes.Main(v1, s.db, s.cache, s.app, s.validator)
 	orderRoutes.Main(v1, s.db, s.cache, s.validator)
+	historyRoutes.Main(v1, s.db, s.cache, s.validator)
 	return nil
 }
 
