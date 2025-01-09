@@ -20,7 +20,7 @@ type IUserService struct {
 }
 
 // BanUser provides a mock function with given fields: c, userID
-func (_m *IUserService) BanUser(c context.Context, userID int64) (*userModel.User, error) {
+func (_m *IUserService) BanUser(c context.Context, userID string) (*userModel.User, error) {
 	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
@@ -29,10 +29,10 @@ func (_m *IUserService) BanUser(c context.Context, userID int64) (*userModel.Use
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
 		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
 		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
@@ -40,7 +40,7 @@ func (_m *IUserService) BanUser(c context.Context, userID int64) (*userModel.Use
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
@@ -80,7 +80,7 @@ func (_m *IUserService) GetBannedUsers(c context.Context) ([]*userModel.User, er
 }
 
 // GetMe provides a mock function with given fields: c, userID
-func (_m *IUserService) GetMe(c context.Context, userID int64) (*userModel.User, error) {
+func (_m *IUserService) GetMe(c context.Context, userID string) (*userModel.User, error) {
 	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
@@ -89,10 +89,10 @@ func (_m *IUserService) GetMe(c context.Context, userID int64) (*userModel.User,
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
 		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
 		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
@@ -100,7 +100,7 @@ func (_m *IUserService) GetMe(c context.Context, userID int64) (*userModel.User,
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
@@ -110,7 +110,7 @@ func (_m *IUserService) GetMe(c context.Context, userID int64) (*userModel.User,
 }
 
 // GetUserByID provides a mock function with given fields: c, userID
-func (_m *IUserService) GetUserByID(c context.Context, userID int64) (*userModel.User, error) {
+func (_m *IUserService) GetUserByID(c context.Context, userID string) (*userModel.User, error) {
 	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
@@ -119,10 +119,10 @@ func (_m *IUserService) GetUserByID(c context.Context, userID int64) (*userModel
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
 		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
 		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
@@ -130,7 +130,7 @@ func (_m *IUserService) GetUserByID(c context.Context, userID int64) (*userModel
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
@@ -258,7 +258,7 @@ func (_m *IUserService) LoginWithGoogle(c context.Context, req *userRequest.Goog
 }
 
 // Logout provides a mock function with given fields: c, userID
-func (_m *IUserService) Logout(c context.Context, userID int64) error {
+func (_m *IUserService) Logout(c context.Context, userID string) error {
 	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
@@ -266,7 +266,7 @@ func (_m *IUserService) Logout(c context.Context, userID int64) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(c, userID)
 	} else {
 		r0 = ret.Error(0)
@@ -276,7 +276,7 @@ func (_m *IUserService) Logout(c context.Context, userID int64) error {
 }
 
 // RefreshToken provides a mock function with given fields: c, userID
-func (_m *IUserService) RefreshToken(c context.Context, userID int64) (string, error) {
+func (_m *IUserService) RefreshToken(c context.Context, userID string) (string, error) {
 	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
@@ -285,16 +285,16 @@ func (_m *IUserService) RefreshToken(c context.Context, userID int64) (string, e
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
 		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
 		r0 = rf(c, userID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
@@ -334,7 +334,7 @@ func (_m *IUserService) Register(c context.Context, req *userRequest.Register) (
 }
 
 // UnbanUser provides a mock function with given fields: c, userID
-func (_m *IUserService) UnbanUser(c context.Context, userID int64) (*userModel.User, error) {
+func (_m *IUserService) UnbanUser(c context.Context, userID string) (*userModel.User, error) {
 	ret := _m.Called(c, userID)
 
 	if len(ret) == 0 {
@@ -343,10 +343,10 @@ func (_m *IUserService) UnbanUser(c context.Context, userID int64) (*userModel.U
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (*userModel.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*userModel.User, error)); ok {
 		return rf(c, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) *userModel.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) *userModel.User); ok {
 		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
@@ -354,7 +354,7 @@ func (_m *IUserService) UnbanUser(c context.Context, userID int64) (*userModel.U
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
@@ -364,7 +364,7 @@ func (_m *IUserService) UnbanUser(c context.Context, userID int64) (*userModel.U
 }
 
 // UpdatePassword provides a mock function with given fields: c, userID, req
-func (_m *IUserService) UpdatePassword(c context.Context, userID int64, req *userRequest.UpdatePassword) error {
+func (_m *IUserService) UpdatePassword(c context.Context, userID string, req *userRequest.UpdatePassword) error {
 	ret := _m.Called(c, userID, req)
 
 	if len(ret) == 0 {
@@ -372,7 +372,7 @@ func (_m *IUserService) UpdatePassword(c context.Context, userID int64, req *use
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdatePassword) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *userRequest.UpdatePassword) error); ok {
 		r0 = rf(c, userID, req)
 	} else {
 		r0 = ret.Error(0)
@@ -382,7 +382,7 @@ func (_m *IUserService) UpdatePassword(c context.Context, userID int64, req *use
 }
 
 // UpdatePicture provides a mock function with given fields: c, userID, req
-func (_m *IUserService) UpdatePicture(c context.Context, userID int64, req *userRequest.UpdatePicture) (*userModel.User, error) {
+func (_m *IUserService) UpdatePicture(c context.Context, userID string, req *userRequest.UpdatePicture) (*userModel.User, error) {
 	ret := _m.Called(c, userID, req)
 
 	if len(ret) == 0 {
@@ -391,10 +391,10 @@ func (_m *IUserService) UpdatePicture(c context.Context, userID int64, req *user
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdatePicture) (*userModel.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *userRequest.UpdatePicture) (*userModel.User, error)); ok {
 		return rf(c, userID, req)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdatePicture) *userModel.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *userRequest.UpdatePicture) *userModel.User); ok {
 		r0 = rf(c, userID, req)
 	} else {
 		if ret.Get(0) != nil {
@@ -402,7 +402,7 @@ func (_m *IUserService) UpdatePicture(c context.Context, userID int64, req *user
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, *userRequest.UpdatePicture) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *userRequest.UpdatePicture) error); ok {
 		r1 = rf(c, userID, req)
 	} else {
 		r1 = ret.Error(1)
@@ -412,7 +412,7 @@ func (_m *IUserService) UpdatePicture(c context.Context, userID int64, req *user
 }
 
 // UpdateProfile provides a mock function with given fields: c, userID, req
-func (_m *IUserService) UpdateProfile(c context.Context, userID int64, req *userRequest.UpdateProfile) (*userModel.User, error) {
+func (_m *IUserService) UpdateProfile(c context.Context, userID string, req *userRequest.UpdateProfile) (*userModel.User, error) {
 	ret := _m.Called(c, userID, req)
 
 	if len(ret) == 0 {
@@ -421,10 +421,10 @@ func (_m *IUserService) UpdateProfile(c context.Context, userID int64, req *user
 
 	var r0 *userModel.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdateProfile) (*userModel.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *userRequest.UpdateProfile) (*userModel.User, error)); ok {
 		return rf(c, userID, req)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *userRequest.UpdateProfile) *userModel.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *userRequest.UpdateProfile) *userModel.User); ok {
 		r0 = rf(c, userID, req)
 	} else {
 		if ret.Get(0) != nil {
@@ -432,7 +432,7 @@ func (_m *IUserService) UpdateProfile(c context.Context, userID int64, req *user
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, *userRequest.UpdateProfile) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *userRequest.UpdateProfile) error); ok {
 		r1 = rf(c, userID, req)
 	} else {
 		r1 = ret.Error(1)

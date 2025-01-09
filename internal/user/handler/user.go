@@ -45,8 +45,8 @@ var MeCacheKey = "/api/v1/profile/me"
 //	@Success	200	{object}	map[string]string	"accessToken"
 //	@Router		/auth/refresh-token [post]
 func (h *UserHandler) RefreshToken(c *gin.Context) {
-	userID := c.GetInt64("userID")
-	if userID == 0 {
+	userID := c.GetString("userID")
+	if userID == "" {
 		log.Println("Failed to get userID from context")
 		response.Error(c, http.StatusInternalServerError, "Failed to get userID from context", errors.New("Failed to get userID from context"))
 		return
@@ -206,14 +206,7 @@ func (h *UserHandler) Logout(c *gin.Context) {
 func (h *UserHandler) BanUser(c *gin.Context) {
 	var res userResource.User
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		log.Println("Invalid user ID format ", err)
-		response.Error(c, http.StatusBadRequest, "Invalid user ID format", err)
-		return
-	}
-
-	user, err := h.service.BanUser(c, id)
+	user, err := h.service.BanUser(c, c.GetString("userID"))
 	if err != nil {
 		log.Println("Failed to ban user ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to ban user", err)
@@ -237,14 +230,7 @@ func (h *UserHandler) BanUser(c *gin.Context) {
 func (h *UserHandler) UnbanUser(c *gin.Context) {
 	var res userResource.User
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		log.Println("Invalid user ID format ", err)
-		response.Error(c, http.StatusBadRequest, "Invalid user ID format", err)
-		return
-	}
-
-	user, err := h.service.UnbanUser(c, id)
+	user, err := h.service.UnbanUser(c, c.Param("id"))
 	if err != nil {
 		log.Println("Failed to unban user ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to unban user", err)
@@ -275,8 +261,7 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetInt64("userID")
-	user, err := h.service.UpdateProfile(c, userID, &req)
+	user, err := h.service.UpdateProfile(c, c.GetString("userID"), &req)
 	if err != nil {
 		log.Println("Failed to update user ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to update user", err)
@@ -308,8 +293,7 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetInt64("userID")
-	if err := h.service.UpdatePassword(c, userID, &req); err != nil {
+	if err := h.service.UpdatePassword(c, c.GetString("userID"), &req); err != nil {
 		log.Println("Failed to update password ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to update password", err)
 		return
@@ -337,8 +321,7 @@ func (h *UserHandler) UpdatePicture(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetInt64("userID")
-	user, err := h.service.UpdatePicture(c, userID, &req)
+	user, err := h.service.UpdatePicture(c, c.GetString("userID"), &req)
 	if err != nil {
 		log.Println("Failed to update profile picture. err: ", err)
 		response.Error(c, http.StatusInternalServerError, "Failed to update profile picture", err)
@@ -364,7 +347,7 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.GetMe(c, c.GetInt64("id"))
+	user, err := h.service.GetMe(c, c.GetString("userID"))
 	if err != nil {
 		log.Println("Failed to get user ", err)
 		response.Error(c, http.StatusNotFound, "User not found", err)
@@ -436,14 +419,7 @@ func (h *UserHandler) GetBannedUsers(c *gin.Context) {
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	var res userResource.User
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		log.Println("Invalid user ID format ", err)
-		response.Error(c, http.StatusBadRequest, "Invalid user ID format", err)
-		return
-	}
-
-	user, err := h.service.GetUserByID(c, id)
+	user, err := h.service.GetUserByID(c, c.Param("id"))
 	if err != nil {
 		log.Println("Failed to get user ", err)
 		response.Error(c, http.StatusNotFound, "User not found", err)

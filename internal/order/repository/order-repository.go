@@ -10,7 +10,7 @@ import (
 
 type IOrderRepository interface {
 	GetAllOrders(ctx context.Context) ([]*orderModel.Order, error)
-	GetOrdersByUser(ctx context.Context, userID int64) ([]*orderModel.Order, error)
+	GetOrdersByUser(ctx context.Context, userID string) ([]*orderModel.Order, error)
 	GetOrderByID(ctx context.Context, orderID string) (*orderModel.Order, error)
 	CreateOrder(ctx context.Context, order *orderModel.Order) (*orderModel.Order, error)
 	CreateHistory(ctx context.Context, history *historyModel.History) error
@@ -49,7 +49,7 @@ func (r *OrderRepository) GetAllOrders(ctx context.Context) ([]*orderModel.Order
 	return orders, nil
 }
 
-func (r *OrderRepository) GetOrdersByUser(ctx context.Context, userID int64) ([]*orderModel.Order, error) {
+func (r *OrderRepository) GetOrdersByUser(ctx context.Context, userID string) ([]*orderModel.Order, error) {
 	var orders []*orderModel.Order
 	query := []dbs.FindOption{
 		dbs.WithLimit(10),
@@ -57,7 +57,7 @@ func (r *OrderRepository) GetOrdersByUser(ctx context.Context, userID int64) ([]
 		dbs.WithPreload([]string{"User"}),
 	}
 
-	if userID != 0 {
+	if userID != "" {
 		query = append(query, dbs.WithQuery(dbs.NewQuery("user_id = ?", userID)))
 	}
 
@@ -70,7 +70,11 @@ func (r *OrderRepository) GetOrdersByUser(ctx context.Context, userID int64) ([]
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*orderModel.Order, error) {
 	var order orderModel.Order
-	if err := r.db.FindByID(ctx, orderID, &order); err != nil {
+	query := []dbs.FindOption{
+		dbs.WithPreload([]string{"User"}),
+		dbs.WithQuery(dbs.NewQuery("id = ?", orderID)),
+	}
+	if err := r.db.FindOne(ctx, &order, query...); err != nil {
 		return nil, err
 	}
 

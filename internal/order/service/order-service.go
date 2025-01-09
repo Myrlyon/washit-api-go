@@ -18,18 +18,18 @@ import (
 )
 
 type IOrderService interface {
-	GetOrdersMe(c context.Context, userID int64) ([]*orderModel.Order, error)
+	GetOrdersMe(c context.Context, userID string) ([]*orderModel.Order, error)
 	GetOrdersAll(c context.Context) ([]*orderModel.Order, error)
-	GetOrderByID(c context.Context, orderID string, userID int64) (*orderModel.Order, error)
-	GetOrdersByUser(c context.Context, userID int64) ([]*orderModel.Order, error)
-	CreateOrder(c context.Context, userID int64, req *orderRequest.Order) (*orderModel.Order, error)
-	CancelOrder(c context.Context, orderID string, userID int64) (*orderModel.Order, error)
+	GetOrderByID(c context.Context, orderID string, userID string) (*orderModel.Order, error)
+	GetOrdersByUser(c context.Context, userID string) ([]*orderModel.Order, error)
+	CreateOrder(c context.Context, userID string, req *orderRequest.Order) (*orderModel.Order, error)
+	CancelOrder(c context.Context, orderID string, userID string) (*orderModel.Order, error)
 	UpdateWeight(c context.Context, orderID string, weight string) (*orderModel.Order, error)
 	AcceptOrder(c context.Context, orderID string) (*orderModel.Order, error)
-	CompleteOrder(c context.Context, orderID string, userID int64) (*orderModel.Order, error)
+	CompleteOrder(c context.Context, orderID string, userID string) (*orderModel.Order, error)
 	PayOrder(c context.Context, orderID string, req *orderRequest.Payment) (*orderModel.Order, error)
 	RejectOrder(c context.Context, orderID string) (*orderModel.Order, error)
-	EditOrder(c context.Context, orderID string, userID int64, req *orderRequest.Order) (*orderModel.Order, error)
+	EditOrder(c context.Context, orderID string, userID string, req *orderRequest.Order) (*orderModel.Order, error)
 }
 
 type OrderService struct {
@@ -45,22 +45,28 @@ func NewOrderService(
 	}
 }
 
-func (s *OrderService) CreateOrder(c context.Context, userID int64, req *orderRequest.Order) (*orderModel.Order, error) {
+func (s *OrderService) CreateOrder(c context.Context, userID string, req *orderRequest.Order) (*orderModel.Order, error) {
 	if err := s.validator.Struct(req); err != nil {
 		log.Printf("Failed to validate Order request: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("validation error: %w", err)
 	}
 
 	order := &orderModel.Order{}
 	orderID, err := generate.AlphaNumericID("ORD")
 	if err != nil {
 		log.Printf("Failed to generate Order ID: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to generate order ID: %w", err)
+	}
+
+	orderUserID, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		log.Printf("Failed to parse userID: %v", err)
+		return nil, fmt.Errorf("failed to parse userID: %w", err)
 	}
 
 	utils.CopyTo(req, order)
 	order.ID = orderID
-	order.UserID = userID
+	order.UserID = orderUserID
 	order.Status = "created"
 
 	createdOrder, err := s.repository.CreateOrder(c, order)
@@ -72,11 +78,11 @@ func (s *OrderService) CreateOrder(c context.Context, userID int64, req *orderRe
 	return createdOrder, nil
 }
 
-func (s *OrderService) GetOrdersMe(c context.Context, userID int64) ([]*orderModel.Order, error) {
+func (s *OrderService) GetOrdersMe(c context.Context, userID string) ([]*orderModel.Order, error) {
 	orders, err := s.repository.GetOrdersByUser(c, userID)
 	if err != nil {
-		log.Printf("Failed to get orders for user %d: %v", userID, err)
-		return nil, fmt.Errorf("failed to get orders for user %d: %w", userID, err)
+		log.Printf("Failed to get orders for user %s: %v", userID, err)
+		return nil, fmt.Errorf("failed to get orders for user %s: %w", userID, err)
 	}
 
 	return orders, nil
@@ -92,7 +98,7 @@ func (s *OrderService) GetOrdersAll(c context.Context) ([]*orderModel.Order, err
 	return orders, nil
 }
 
-func (s *OrderService) GetOrdersByUser(c context.Context, userID int64) ([]*orderModel.Order, error) {
+func (s *OrderService) GetOrdersByUser(c context.Context, userID string) ([]*orderModel.Order, error) {
 	orders, err := s.repository.GetOrdersByUser(c, userID)
 	if err != nil {
 		log.Printf("Failed to get Orders from userID: %v", err)
@@ -102,14 +108,14 @@ func (s *OrderService) GetOrdersByUser(c context.Context, userID int64) ([]*orde
 	return orders, nil
 }
 
-func (s *OrderService) GetOrderByID(c context.Context, orderID string, userID int64) (*orderModel.Order, error) {
+func (s *OrderService) GetOrderByID(c context.Context, orderID string, userID string) (*orderModel.Order, error) {
 	order, err := s.repository.GetOrderByID(c, orderID)
 	if err != nil {
 		log.Printf("Failed to get Order by id: %v", err)
 		return nil, fmt.Errorf("failed to get order by id: %v", err)
 	}
 
-	if order.UserID != userID {
+	if userID != "" && strconv.FormatInt(order.UserID, 10) != userID {
 		log.Printf("User ID mismatch: expected %v, got %v", userID, order.UserID)
 		return nil, fmt.Errorf("user ID mismatch: %v", userID)
 	}
@@ -162,7 +168,7 @@ func (s *OrderService) AcceptOrder(c context.Context, orderID string) (*orderMod
 	return order, nil
 }
 
-func (s *OrderService) CompleteOrder(c context.Context, orderID string, userID int64) (*orderModel.Order, error) {
+func (s *OrderService) CompleteOrder(c context.Context, orderID string, userID string) (*orderModel.Order, error) {
 	var history historyModel.History
 
 	order, err := s.repository.GetOrderByID(c, orderID)
@@ -171,7 +177,7 @@ func (s *OrderService) CompleteOrder(c context.Context, orderID string, userID i
 		return nil, fmt.Errorf("failed to get order by id: %w", err)
 	}
 
-	if order.UserID != userID {
+	if strconv.FormatInt(order.UserID, 10) != userID {
 		log.Printf("User ID mismatch: expected %v, got %v", userID, order.UserID)
 		return nil, fmt.Errorf("user ID mismatch: %v", userID)
 	}
@@ -261,7 +267,7 @@ func (s *OrderService) RejectOrder(c context.Context, orderID string) (*orderMod
 	return order, nil
 }
 
-func (s *OrderService) CancelOrder(c context.Context, orderID string, userID int64) (*orderModel.Order, error) {
+func (s *OrderService) CancelOrder(c context.Context, orderID string, userID string) (*orderModel.Order, error) {
 	var history historyModel.History
 
 	order, err := s.repository.GetOrderByID(c, orderID)
@@ -270,7 +276,7 @@ func (s *OrderService) CancelOrder(c context.Context, orderID string, userID int
 		return nil, fmt.Errorf("failed to get order by id: %w", err)
 	}
 
-	if order.UserID != userID {
+	if strconv.FormatInt(order.UserID, 10) != userID {
 		log.Printf("User ID mismatch")
 		return nil, fmt.Errorf("user ID mismatch: %v", userID)
 	}
@@ -297,7 +303,7 @@ func (s *OrderService) CancelOrder(c context.Context, orderID string, userID int
 	return order, nil
 }
 
-func (s *OrderService) EditOrder(c context.Context, orderID string, userID int64, req *orderRequest.Order) (*orderModel.Order, error) {
+func (s *OrderService) EditOrder(c context.Context, orderID string, userID string, req *orderRequest.Order) (*orderModel.Order, error) {
 	if err := s.validator.Struct(req); err != nil {
 		log.Printf("Validation failed for update profile request: %v", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
@@ -309,7 +315,7 @@ func (s *OrderService) EditOrder(c context.Context, orderID string, userID int64
 		return nil, fmt.Errorf("failed to get order by id: %v", err)
 	}
 
-	if order.UserID != userID {
+	if strconv.FormatInt(order.UserID, 10) != userID {
 		log.Printf("User ID mismatch")
 		return nil, fmt.Errorf("user ID mismatch: %v", userID)
 	}

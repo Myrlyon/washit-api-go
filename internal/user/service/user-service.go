@@ -21,20 +21,20 @@ import (
 )
 
 type IUserService interface {
-	RefreshToken(c context.Context, userID int64) (string, error)
+	RefreshToken(c context.Context, userID string) (string, error)
 	Register(c context.Context, req *userRequest.Register) (*userModel.User, error)
 	LoginWithGoogle(c context.Context, req *userRequest.Google, userInfo *auth.UserInfo) (*userModel.User, string, string, error)
 	Login(c context.Context, req *userRequest.Login) (*userModel.User, string, string, error)
-	Logout(c context.Context, userID int64) error
-	BanUser(c context.Context, userID int64) (*userModel.User, error)
-	UnbanUser(c context.Context, userID int64) (*userModel.User, error)
-	GetMe(c context.Context, userID int64) (*userModel.User, error)
-	GetUserByID(c context.Context, userID int64) (*userModel.User, error)
+	Logout(c context.Context, userID string) error
+	BanUser(c context.Context, userID string) (*userModel.User, error)
+	UnbanUser(c context.Context, userID string) (*userModel.User, error)
+	GetMe(c context.Context, userID string) (*userModel.User, error)
+	GetUserByID(c context.Context, userID string) (*userModel.User, error)
 	GetUsers(c context.Context) ([]*userModel.User, error)
 	GetBannedUsers(c context.Context) ([]*userModel.User, error)
-	UpdateProfile(c context.Context, userID int64, req *userRequest.UpdateProfile) (*userModel.User, error)
-	UpdatePassword(c context.Context, userID int64, req *userRequest.UpdatePassword) error
-	UpdatePicture(c context.Context, userID int64, req *userRequest.UpdatePicture) (*userModel.User, error)
+	UpdateProfile(c context.Context, userID string, req *userRequest.UpdateProfile) (*userModel.User, error)
+	UpdatePassword(c context.Context, userID string, req *userRequest.UpdatePassword) error
+	UpdatePicture(c context.Context, userID string, req *userRequest.UpdatePicture) (*userModel.User, error)
 }
 
 type UserService struct {
@@ -50,7 +50,7 @@ func NewUserService(
 	}
 }
 
-func (s *UserService) RefreshToken(c context.Context, userID int64) (string, error) {
+func (s *UserService) RefreshToken(c context.Context, userID string) (string, error) {
 	user, err := s.repository.GetUserByID(c, userID)
 	if err != nil {
 		log.Printf("Failed to get user by id: %v", err)
@@ -259,15 +259,15 @@ func (s *UserService) Register(c context.Context, req *userRequest.Register) (*u
 	return user, nil
 }
 
-func (s *UserService) Logout(c context.Context, userID int64) error {
+func (s *UserService) Logout(c context.Context, userID string) error {
 	return nil
 }
 
-func (s *UserService) BanUser(c context.Context, userID int64) (*userModel.User, error) {
+func (s *UserService) BanUser(c context.Context, userID string) (*userModel.User, error) {
 	user, err := s.repository.GetUserByID(c, userID)
 	if err != nil {
 		log.Printf("Failed to get user by id: %v", err)
-		return nil, fmt.Errorf("user not found: %d", userID)
+		return nil, fmt.Errorf("user not found: %s", userID)
 	}
 
 	if user.IsBanned {
@@ -284,7 +284,7 @@ func (s *UserService) BanUser(c context.Context, userID int64) (*userModel.User,
 	return user, nil
 }
 
-func (s *UserService) UnbanUser(c context.Context, userID int64) (*userModel.User, error) {
+func (s *UserService) UnbanUser(c context.Context, userID string) (*userModel.User, error) {
 	user, err := s.repository.GetUserByID(c, userID)
 	if err != nil {
 		log.Printf("Failed to get user by id: %v", err)
@@ -305,7 +305,7 @@ func (s *UserService) UnbanUser(c context.Context, userID int64) (*userModel.Use
 	return user, nil
 }
 
-func (s *UserService) UpdateProfile(c context.Context, userID int64, req *userRequest.UpdateProfile) (*userModel.User, error) {
+func (s *UserService) UpdateProfile(c context.Context, userID string, req *userRequest.UpdateProfile) (*userModel.User, error) {
 	if err := s.validator.Struct(req); err != nil {
 		log.Printf("Validation error for update profile request: %v", err)
 		return nil, fmt.Errorf("validation error: %v", err)
@@ -313,7 +313,7 @@ func (s *UserService) UpdateProfile(c context.Context, userID int64, req *userRe
 
 	user, err := s.repository.GetUserByID(c, userID)
 	if err != nil {
-		log.Printf("User not found with id: %d, error: %v", userID, err)
+		log.Printf("User not found with id: %s, error: %v", userID, err)
 		return nil, fmt.Errorf("user not found: %v", userID)
 	}
 
@@ -328,14 +328,14 @@ func (s *UserService) UpdateProfile(c context.Context, userID int64, req *userRe
 	}
 
 	if err := s.repository.UpdateUser(c, user); err != nil {
-		log.Printf("Failed to update user: %d, error: %v", userID, err)
+		log.Printf("Failed to update user: %s, error: %v", userID, err)
 		return nil, fmt.Errorf("failed to update user: %v", err)
 	}
 
 	return user, nil
 }
 
-func (s *UserService) UpdatePassword(c context.Context, userID int64, req *userRequest.UpdatePassword) error {
+func (s *UserService) UpdatePassword(c context.Context, userID string, req *userRequest.UpdatePassword) error {
 	if err := s.validator.Struct(req); err != nil {
 		log.Printf("Validation error for update password request: %v", err)
 		return fmt.Errorf("validation error: %v", err)
@@ -368,7 +368,7 @@ func (s *UserService) UpdatePassword(c context.Context, userID int64, req *userR
 	return nil
 }
 
-func (s *UserService) UpdatePicture(c context.Context, userID int64, req *userRequest.UpdatePicture) (*userModel.User, error) {
+func (s *UserService) UpdatePicture(c context.Context, userID string, req *userRequest.UpdatePicture) (*userModel.User, error) {
 	user, err := s.repository.GetUserByID(c, userID)
 	if err != nil {
 		log.Printf("Failed to get user by ID: %v", err)
@@ -392,10 +392,10 @@ func (s *UserService) UpdatePicture(c context.Context, userID int64, req *userRe
 	return user, nil
 }
 
-func (s *UserService) GetMe(c context.Context, userID int64) (*userModel.User, error) {
+func (s *UserService) GetMe(c context.Context, userID string) (*userModel.User, error) {
 	user, err := s.repository.GetUserByID(c, userID)
 	if err != nil {
-		log.Printf("Failed to get profile information for user ID %d: %v", userID, err)
+		log.Printf("Failed to get profile information for user ID %s: %v", userID, err)
 		return nil, fmt.Errorf("user not found: %v", userID)
 	}
 
@@ -422,10 +422,10 @@ func (s *UserService) GetBannedUsers(c context.Context) ([]*userModel.User, erro
 	return users, nil
 }
 
-func (s *UserService) GetUserByID(c context.Context, userID int64) (*userModel.User, error) {
+func (s *UserService) GetUserByID(c context.Context, userID string) (*userModel.User, error) {
 	user, err := s.repository.GetUserByID(c, userID)
 	if err != nil {
-		log.Printf("Failed to get user by ID %d: %v", userID, err)
+		log.Printf("Failed to get user by ID %s: %v", userID, err)
 		return nil, fmt.Errorf("user not found: %v", userID)
 	}
 

@@ -9,19 +9,21 @@ import (
 	"washit-api/pkg/redis"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 )
 
-func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis) {
+func Main(r *gin.RouterGroup, db dbs.IDatabase, cache redis.IRedis, validator *validator.Validate) {
 	repository := historyRepository.NewHistoryRepository(db)
-	service := historyService.NewHistoryService(repository)
+	service := historyService.NewHistoryService(repository, validator)
 	handler := history.NewHistoryHandler(service, cache)
 
 	authMiddleware := middleware.JWTAuth()
 	adminAuthMiddleware := middleware.JWTAuthAdmin()
 
-	r.GET("/histories", authMiddleware, handler.GetHistoriesMe)
+	r.GET("/histories/me", authMiddleware, handler.GetHistoriesMe)
 	r.GET("/history/:id", authMiddleware, handler.GetHistoryByID)
 
 	//ADMIN
 	r.GET("/histories/user/:id", adminAuthMiddleware, handler.GetHistoriesByUser)
+	r.GET("/histories/all", adminAuthMiddleware, handler.GetAllHistories)
 }
